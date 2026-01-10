@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS workout_program_days (
 CREATE TABLE IF NOT EXISTS exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    equipment_type TEXT NOT NULL
+    equipment_type TEXT NOT NULL,
+    weight_increment INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS workout_day_exercises (
@@ -45,5 +46,7 @@ CREATE TABLE IF NOT EXISTS user_one_rep_maxes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     exercise_id INTEGER NOT NULL,
-    one_rep_max INTEGER NOT NULL
+    one_rep_max INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (exercise_id) REFERENCES exercises(id)
 );
