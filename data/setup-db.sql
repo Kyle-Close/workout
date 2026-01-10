@@ -91,9 +91,9 @@ INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 12
 INSERT INTO workout_programs (user_id, name) VALUES (1, 'Stronger by Science Linear Progression');
 
 INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 1
-INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 2
-INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 3
-INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 4
-INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 5
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 2); -- Day 2
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 3); -- Day 3
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 4); -- Day 4
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 5); -- Day 5
 
 -- Workout day exercises should be generated dynamically in python
