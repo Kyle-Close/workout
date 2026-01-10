@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS workout_day_exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     exercise_id INTEGER NOT NULL,
     workout_day_id INTEGER NOT NULL,
+    program_week INTEGER NOT NULL,
     sets INTEGER NOT NULL,
     reps INTEGER NOT NULL,
     weight REAL NOT NULL,
@@ -86,3 +87,13 @@ INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 9,
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 10, 65); -- T-Bar Rows
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 11, 158); -- Lat Pull-Downs
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 12, 50); -- Assisted Pull-Ups
+
+INSERT INTO workout_programs (user_id, name) VALUES (1, 'Stronger by Science Linear Progression');
+
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 1
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 2
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 3
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 4
+INSERT INTO workout_program_days (workout_program_id, workout_day_id) VALUES (1, 1); -- Day 5
+
+-- Workout day exercises should be generated dynamically in python
