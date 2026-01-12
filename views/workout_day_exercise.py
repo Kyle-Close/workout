@@ -1,4 +1,15 @@
-class workoutDayExercise():
+from typing import override
+
+
+class WorkoutDayExercise:
+    id: int
+    exercise_id: int
+    program_id: int
+    workout_day: int
+    target_sets: int
+    target_reps: int
+    intensity: float
+
     def __init__(self, cursorResult: tuple[int, int, int, int, int, int, float]):
         self.id = cursorResult[0]
         self.exercise_id = cursorResult[1]
@@ -8,6 +19,7 @@ class workoutDayExercise():
         self.target_reps = cursorResult[5]
         self.intensity = cursorResult[6]
 
+    @override
     def __str__(self) -> str:
         return (
             f"id: {self.id}\n"
@@ -18,4 +30,3 @@ class workoutDayExercise():
             f"target reps: {self.target_reps}\n"
             f"intensity: {self.intensity}\n"
         )
-            

@@ -1,6 +1,9 @@
 import sqlite3
-from enums.equipment_type import EquipmentType
-from views.workout_day_exercise import workoutDayExercise
+from typing import cast
+from views.user import User
+from views.user_one_rep_max_with_exercise import UserOneRepMaxWithExercise
+from views.user_one_rep_maxes import UserOneRepMaxes
+from views.workout_day_exercise import WorkoutDayExercise
 
 
 class db:
@@ -18,26 +21,11 @@ class db:
         self.connection = connection
         self.cursor = cursor
 
-    def create_user(self, name: str):
-        statement = "INSERT INTO users (username) VALUES (?)"
-        _ = self.cursor.execute(statement, (name,))
-        self.connection.commit()
-        return self.cursor.lastrowid  # returns the primary key of created row
-
-    def create_exercise(
-        self, name: str, equipment_type: EquipmentType, weight_increment: int
-    ):
-        statement = "INSERT INTO exercises (name, equipment_type, weight_increment) VALUES (?, ?, ?)"
-        _ = self.cursor.execute(
-            statement, (name, equipment_type.name, weight_increment)
-        )
-        self.connection.commit()
-        return self.cursor.lastrowid  # returns the primary key of created row
-
-    def get_user(self, username: str):
-        statement = "SELECT id FROM users WHERE username = (?)"
+    def get_user(self, username: str) -> User:
+        statement = "SELECT * FROM users WHERE username = (?)"
         _ = self.cursor.execute(statement, (username,))
-        return self.cursor.fetchone()
+        user = cast(User, self.cursor.fetchone())
+        return user
 
     def get_program_workout_days_excercises_data(self, program_id: int):
         statement = """
@@ -47,6 +35,55 @@ class db:
             WHERE t1.workout_program_id = (?)
         """
         _ = self.cursor.execute(statement, (program_id,))
-        rows = self.cursor.fetchall()
+        rows = cast(
+            list[tuple[int, int, int, int, int, int, float]], self.cursor.fetchall()
+        )
 
-        return [workoutDayExercise(row) for row in rows]
+        return [WorkoutDayExercise(row) for row in rows]
+
+    def get_user_one_rep_maxes(self, user_id: int) -> list[UserOneRepMaxes]:
+        statement = """
+            SELECT t1.name,  FROM user_one_rep_maxes WHERE user_id = (?)
+        """
+        _ = self.cursor.execute(statement, (user_id,))
+        rows = cast(list[tuple[int, int, int, float]], self.cursor.fetchall())
+        return [UserOneRepMaxes(row) for row in rows]
+
+    def get_user_one_rep_maxes_with_exercise_data(
+        self, user_id: int
+    ) -> list[UserOneRepMaxWithExercise]:
+        statement = """
+            SELECT *
+            FROM user_one_rep_maxes AS t1
+            INNER JOIN exercises AS t2 ON t1.exercise_id = t2.id
+            WHERE t1.user_id = (?)
+        """
+        _ = self.cursor.execute(statement, (user_id,))
+        rows = cast(
+            list[tuple[int, int, int, float, int, str, str, float]],
+            self.cursor.fetchall(),
+        )
+        return [UserOneRepMaxWithExercise(row) for row in rows]
+
+    def latest_program_week_entry(self, user_id: int, program_id: int) -> int:
+        statement = """
+            SELECT MAX(program_week) AS largest_program_week
+            FROM exercise_log AS t1
+            INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
+            WHERE t1.user_id = (?) AND t2.workout_program_id = (?)
+        """
+        _ = self.cursor.execute(statement, (user_id, program_id))
+        value = self.cursor.fetchone()[0]
+        return value if value is not None else 0
+
+    def create_exercise_log_entry(
+        self, user_id: int, workout_day_exercise_id: int, program_week: int, weight: int
+    ):
+        statement = """
+            INSERT INTO exercise_log (user_id, workout_day_exercise_id, program_week, weight)
+            VALUES (?, ?, ?, ?)
+        """
+        _ = self.cursor.execute(
+            statement, (user_id, workout_day_exercise_id, program_week, weight)
+        )
+        return self.connection.commit()
