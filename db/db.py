@@ -1,5 +1,6 @@
 import sqlite3
 from enums.equipment_type import EquipmentType
+from views.workout_day_exercise import workoutDayExercise
 
 
 class db:
@@ -9,6 +10,7 @@ class db:
     def __init__(self):
         try:
             connection = sqlite3.connect("./data/workout.db")
+            connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
         except Exception as e:
             raise Exception(f"Error connecting to DB: {e}")
@@ -45,4 +47,6 @@ class db:
             WHERE t1.workout_program_id = (?)
         """
         _ = self.cursor.execute(statement, (program_id,))
-        return self.cursor.fetchall()
+        rows = self.cursor.fetchall()
+
+        return [workoutDayExercise(row) for row in rows]
