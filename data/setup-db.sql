@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     program_week INTEGER NOT NULL,
     weight INTEGER NOT NULL,
     sets_completed INTEGER,
-    reps_completed INTEGER,
+    reps_in_reserve INTEGER,
     notes TEXT,
     completed BOOLEAN NOT NULL DEFAULT 0
 );
