@@ -31,3 +31,18 @@ class db:
         )
         self.connection.commit()
         return self.cursor.lastrowid  # returns the primary key of created row
+
+    def get_user(self, username: str):
+        statement = "SELECT id FROM users WHERE username = (?)"
+        _ = self.cursor.execute(statement, (username,))
+        return self.cursor.fetchone()
+
+    def get_program_workout_days_excercises_data(self, program_id: int):
+        statement = """
+            SELECT t1.id, t1.exercise_id, t1.workout_program_id, t1.workout_day, t1.target_sets, t1.target_reps, t1.intensity
+            FROM workout_day_exercises AS t1
+            INNER JOIN workout_programs as t2 ON t1.workout_program_id = t2.id
+            WHERE t1.workout_program_id = (?)
+        """
+        _ = self.cursor.execute(statement, (program_id,))
+        return self.cursor.fetchall()
