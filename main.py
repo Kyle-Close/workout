@@ -1,13 +1,23 @@
-from fastapi import FastAPI
+from collections.abc import Generator
+from fastapi import Depends, FastAPI
 from core.PopulateExerciseLogsWeek import populate_exercise_logs_week
-from enums.equipment_type import EquipmentType
-from db.db import db
+from db.db import DB
 
 app = FastAPI()
-db = db()
-populate_exercise_logs_week(db, 1, 1)
+
+
+def get_db() -> Generator[DB, None, None]:
+    db = DB()
+    try:
+        yield db
+        db.connection.commit()
+    except Exception:
+        db.connection.rollback()
+        raise
+    finally:
+        db.close()
 
 
 @app.get("/")
-async def root():
-    pass
+def root(db: DB = Depends(get_db)):
+    populate_exercise_logs_week(db, 1, 1)
