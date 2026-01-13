@@ -1,19 +1,25 @@
 from db.db import DB
+from views.exercise_log import ExerciseLog
 
 
-def complete_exercise_log_entry(
-    db: DB,
-    exercise_log_id: int,
-    sets_completed: int,
-    reps_in_reserve: int,
-    notes: str = "",
-):
+def update_many_exercise_logs(db: DB, exercise_logs: list[ExerciseLog]):
     statement = """
             UPDATE exercise_log
-            SET sets_completed = ?, reps_in_reserve = ?, notes = ?, completed = 1
+            SET program_week = ?, weight = ?, sets_completed = ?, reps_in_reserve = ?, notes = ?, completed = ?
             WHERE id = ?
-        """
-    _ = db.connection.execute(
-        statement, (sets_completed, reps_in_reserve, notes, exercise_log_id)
-    )
+    """
+    updates = [
+        (
+            log.program_week,
+            log.weight,
+            log.sets_completed,
+            log.reps_in_reserve,
+            log.notes,
+            log.completed,
+            log.id,
+        )
+        for log in exercise_logs
+    ]
+
+    _ = db.connection.executemany(statement, updates)
     db.connection.commit()
