@@ -23,3 +23,15 @@ def update_many_exercise_logs(db: DB, exercise_logs: list[ExerciseLog]):
 
     _ = db.connection.executemany(statement, updates)
     db.connection.commit()
+
+
+def update_one_rep_max(db: DB, user_id: int, exercise_id, max: float):
+    statement = """
+        UPDATE user_one_rep_maxes
+        SET one_rep_max = ?
+        WHERE user_id = ? AND exercise_id = ?
+    """
+    params = [max, user_id, exercise_id]
+
+    _ = db.connection.execute(statement, params)
+    db.connection.commit()

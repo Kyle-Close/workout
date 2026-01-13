@@ -1,4 +1,4 @@
-def calculate_new_one_rep_max(current_one_rep_max: int, set_delta: int, rip: int):
+def calculate_new_one_rep_max(current_one_rep_max: float, set_delta: int, rip: int):
     # set delta = amount of sets completed vs target. -2 would mean just 1 set completed if target is 3
     # rip = reps in reserve on last set
     percent_to_add = 0
