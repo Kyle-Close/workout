@@ -7,6 +7,7 @@ from views.user import User
 from views.user_one_rep_max_with_exercise import UserOneRepMaxWithExercise
 from views.user_one_rep_maxes import UserOneRepMaxes
 from views.workout_day_exercise import WorkoutDayExercise
+from views.get_current_week_view import ExerciseLogWithDay
 
 
 def get_user(db: DB, username: str) -> User:
@@ -14,7 +15,7 @@ def get_user(db: DB, username: str) -> User:
     return cast(User, db.connection.execute(statement, (username,)).fetchone())
 
 
-def latest_program_week_entry(db: DB, user_id: int, program_id: int) -> int:
+def get_latest_program_week_entry(db: DB, user_id: int, program_id: int) -> int:
     statement = """
         SELECT MAX(program_week) AS largest_program_week
         FROM exercise_log AS t1
@@ -95,6 +96,7 @@ def get_complete_day_calc_one_rep_max_query_res(
     rows = db.connection.execute(statement, params).fetchall()
     return [CompleteDayCalcOneRepMaxView(row) for row in rows]
 
+
 def get_number_of_days_in_program_week(db: DB, program_id: int):
     statement = """
         SELECT MAX(t1.workout_day)
@@ -104,3 +106,17 @@ def get_number_of_days_in_program_week(db: DB, program_id: int):
     """
     params = (program_id,)
     return db.connection.execute(statement, params).fetchone()[0]
+
+
+def get_user_program_exercise_logs_by_week(
+    db: DB, user_id: int, program_id: int, week_num: int
+) -> list[ExerciseLogWithDay]:
+    statement = """
+        SELECT t1.*, t2.workout_day
+        FROM exercise_log AS t1
+        INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
+        WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ?
+    """
+    params = (user_id, program_id, week_num)
+    rows = db.connection.execute(statement, params).fetchall()
+    return [ExerciseLogWithDay(**dict(row)) for row in rows]

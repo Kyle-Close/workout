@@ -1,19 +1,18 @@
 from collections.abc import Generator
-from operator import index
-from core import PopulateExerciseLogsWeek
 from fastapi import Depends, FastAPI
 from core.CalculateNewOneRepMax import calculate_new_one_rep_max
 from core.CompleteDay import complete_day_logs
 from core.PopulateExerciseLogsWeek import populate_exercise_logs_week
 from db.db import DB
 from db.selects import (
-    get_many_user_one_rep_maxes,
+    get_latest_program_week_entry,
     get_number_of_days_in_program_week,
-    get_user_one_rep_maxes_with_exercise_data,
     get_complete_day_calc_one_rep_max_query_res,
+    get_user_program_exercise_logs_by_week,
 )
 from db.updates import update_one_rep_max
 from payloads.generate_logs_week import GenerateLogsWeekPayload
+from payloads.get_current_week_data import GetCurrentWeekDataPayload
 from views.exercise_log import ExerciseLog
 
 app = FastAPI()
@@ -31,14 +30,23 @@ def get_db() -> Generator[DB, None, None]:
         db.close()
 
 
-@app.get("/")
-def root(db: DB = Depends(get_db)):
-    pass
+@app.get("/get-current-week-data")
+def get_current_week_data(payload: GetCurrentWeekDataPayload, db: DB = Depends(get_db)):
+    current_week = get_latest_program_week_entry(
+        db, payload.user_id, payload.workout_program_id
+    )
+    return get_user_program_exercise_logs_by_week(
+        db, payload.user_id, payload.workout_program_id, current_week
+    )
 
-@app.post('/generate-logs-week')
-def generate_logs_week_endpoint(payload: GenerateLogsWeekPayload, db: DB = Depends(get_db)):
+
+@app.post("/generate-logs-week")
+def generate_logs_week_endpoint(
+    payload: GenerateLogsWeekPayload, db: DB = Depends(get_db)
+):
     populate_exercise_logs_week(db, payload.user_id, payload.workout_program_id)
-    return 'Successfully generated a weeks worth of exercise logs for program'
+    return "Successfully generated a weeks worth of exercise logs for program"
+
 
 @app.patch("/complete-day")
 def complete_day_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
@@ -64,11 +72,16 @@ def complete_day_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
             for idx, log in enumerate(payload)
             if log.workout_day_exercise_id == i.workout_day_exercise_id
         )
-        # find index where 
-        # payload[0].workout_day_exercise_id == i.id
-        
+        sets_completed = payload[idx].sets_completed
+        rir = payload[idx].reps_in_reserve
+
+        if sets_completed is None or rir is None:
+            continue
+
         max = calculate_new_one_rep_max(
-            i.one_rep_max, payload[idx].sets_completed - i.target_sets, payload[idx].reps_in_reserve
+            i.one_rep_max,
+            sets_completed - i.target_sets,
+            rir,
         )
         update_one_rep_max(db, i.user_id, i.exercise_id, max)
 
@@ -79,6 +92,6 @@ def complete_day_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
 
     if workout_day == final_day:
         populate_exercise_logs_week(db, user_id, workout_program_id)
-        msg += '\nWeek completed! Generated next weeks exercise logs.'
+        msg += "\nWeek completed! Generated next weeks exercise logs."
 
     return msg

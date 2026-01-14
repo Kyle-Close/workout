@@ -7,7 +7,7 @@ class ExerciseLog(BaseModel):
     workout_day_exercise_id: int
     program_week: int
     weight: int
-    sets_completed: int
-    reps_in_reserve: int
-    notes: str
+    sets_completed: int | None
+    reps_in_reserve: int | None
+    notes: str | None
     completed: bool

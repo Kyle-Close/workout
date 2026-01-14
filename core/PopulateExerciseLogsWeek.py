@@ -1,9 +1,9 @@
 from db.db import DB
 from helpers.Round import round_to_nearest
 from db.selects import (
+    get_latest_program_week_entry,
     get_program_workout_days_excercises_data,
     get_user_one_rep_maxes_with_exercise_data,
-    latest_program_week_entry,
 )
 from db.inserts import create_exercise_log_entry
 
@@ -11,7 +11,7 @@ from db.inserts import create_exercise_log_entry
 def populate_exercise_logs_week(db: DB, user_id: int, program_id: int):
     workout_day_entries = get_program_workout_days_excercises_data(db, program_id)
     one_rep_maxes_with_exercise = get_user_one_rep_maxes_with_exercise_data(db, user_id)
-    new_week_num = latest_program_week_entry(db, user_id, program_id) + 1
+    new_week_num = get_latest_program_week_entry(db, user_id, program_id) + 1
 
     for entry in workout_day_entries:
         exercise_data = next(
