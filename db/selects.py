@@ -79,7 +79,7 @@ def get_complete_day_calc_one_rep_max_query_res(
     placeholders = ",".join("?" for _ in exercise_log_ids)
 
     statement = f"""
-        SELECT t1.user_id, t2.exercise_id, t3.one_rep_max, t2.target_sets, t1.sets_completed, t1.reps_in_reserve
+        SELECT t1.user_id, t2.exercise_id, t3.one_rep_max, t2.target_sets, t1.sets_completed, t1.reps_in_reserve, t2.workout_day, t2.workout_program_id, t2.id
         FROM exercise_log AS t1
         INNER JOIN workout_day_exercises AS t2
             ON t1.workout_day_exercise_id = t2.id
@@ -94,3 +94,13 @@ def get_complete_day_calc_one_rep_max_query_res(
 
     rows = db.connection.execute(statement, params).fetchall()
     return [CompleteDayCalcOneRepMaxView(row) for row in rows]
+
+def get_number_of_days_in_program_week(db: DB, program_id: int):
+    statement = """
+        SELECT MAX(t1.workout_day)
+        FROM workout_day_exercises AS t1
+        INNER JOIN workout_programs AS t2 ON t1.workout_program_id = t2.id
+        WHERE t1.workout_program_id = ?
+    """
+    params = (program_id,)
+    return db.connection.execute(statement, params).fetchone()[0]
