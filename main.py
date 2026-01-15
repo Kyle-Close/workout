@@ -5,6 +5,7 @@ from core.CompleteDay import complete_day_logs
 from core.PopulateExerciseLogsWeek import populate_exercise_logs_week
 from db.db import DB
 from db.selects import (
+    get_current_workout_day_of_week,
     get_latest_program_week_entry,
     get_number_of_days_in_program_week,
     get_complete_day_calc_one_rep_max_query_res,
@@ -22,6 +23,7 @@ app.add_middleware(
     allow_credentials=True,
 )
 
+
 def get_db() -> Generator[DB, None, None]:
     db = DB()
     try:
@@ -35,9 +37,21 @@ def get_db() -> Generator[DB, None, None]:
 
 
 @app.get("/get-current-week-data")
-def get_current_week_data(user_id: int, workout_program_id: int, db: DB = Depends(get_db)):
+def get_current_week_data(
+    user_id: int, workout_program_id: int, db: DB = Depends(get_db)
+):
     current_week = get_latest_program_week_entry(db, user_id, workout_program_id)
-    return get_user_program_exercise_logs_by_week(db, user_id, workout_program_id, current_week)
+    data = get_user_program_exercise_logs_by_week(
+        db, user_id, workout_program_id, current_week
+    )
+    current_day_of_week = get_current_workout_day_of_week(
+        db, user_id, workout_program_id, current_week
+    )
+
+    return {
+        "currentDayOfWeek": current_day_of_week,
+        "weekData": data,
+    }
 
 
 @app.post("/generate-logs-week")

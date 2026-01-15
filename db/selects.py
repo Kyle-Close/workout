@@ -130,3 +130,17 @@ def get_user_program_exercise_logs_by_week(
     params = (user_id, program_id, week_num)
     rows = db.connection.execute(statement, params).fetchall()
     return [ExerciseEntryForDayView(**dict(row)) for row in rows]
+
+
+def get_current_workout_day_of_week(
+    db: DB, user_id: int, program_id: int, week_num: int
+):
+    statement = """
+        SELECT MIN(t2.workout_day)
+        FROM exercise_log AS t1
+        INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
+        WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ? AND t1.completed = 0
+    """
+    params = (user_id, program_id, week_num)
+    value = db.connection.execute(statement, params).fetchone()[0]
+    return value if value is not None else 0
