@@ -12,11 +12,15 @@ from db.selects import (
 )
 from db.updates import update_one_rep_max
 from payloads.generate_logs_week import GenerateLogsWeekPayload
-from payloads.get_current_week_data import GetCurrentWeekDataPayload
 from views.exercise_log import ExerciseLog
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+)
 
 def get_db() -> Generator[DB, None, None]:
     db = DB()
@@ -31,13 +35,9 @@ def get_db() -> Generator[DB, None, None]:
 
 
 @app.get("/get-current-week-data")
-def get_current_week_data(payload: GetCurrentWeekDataPayload, db: DB = Depends(get_db)):
-    current_week = get_latest_program_week_entry(
-        db, payload.user_id, payload.workout_program_id
-    )
-    return get_user_program_exercise_logs_by_week(
-        db, payload.user_id, payload.workout_program_id, current_week
-    )
+def get_current_week_data(user_id: int, workout_program_id: int, db: DB = Depends(get_db)):
+    current_week = get_latest_program_week_entry(db, user_id, workout_program_id)
+    return get_user_program_exercise_logs_by_week(db, user_id, workout_program_id, current_week)
 
 
 @app.post("/generate-logs-week")

@@ -7,7 +7,7 @@ from views.user import User
 from views.user_one_rep_max_with_exercise import UserOneRepMaxWithExercise
 from views.user_one_rep_maxes import UserOneRepMaxes
 from views.workout_day_exercise import WorkoutDayExercise
-from views.get_current_week_view import ExerciseLogWithDay
+from views.get_current_week_view import ExerciseEntryForDayView
 
 
 def get_user(db: DB, username: str) -> User:
@@ -110,13 +110,23 @@ def get_number_of_days_in_program_week(db: DB, program_id: int):
 
 def get_user_program_exercise_logs_by_week(
     db: DB, user_id: int, program_id: int, week_num: int
-) -> list[ExerciseLogWithDay]:
+) -> list[ExerciseEntryForDayView]:
     statement = """
-        SELECT t1.*, t2.workout_day
+        SELECT        
+            t1.id  AS exercise_log_id,
+            t3.name AS exercise_name,
+            t1.program_week,
+            t2.workout_day,
+            t1.weight,
+            t2.target_sets,
+            t2.target_reps,
+            t1.sets_completed,
+            t1.reps_in_reserve
         FROM exercise_log AS t1
         INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
+        INNER JOIN exercises AS t3 ON t2.exercise_id = t3.id
         WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ?
     """
     params = (user_id, program_id, week_num)
     rows = db.connection.execute(statement, params).fetchall()
-    return [ExerciseLogWithDay(**dict(row)) for row in rows]
+    return [ExerciseEntryForDayView(**dict(row)) for row in rows]
