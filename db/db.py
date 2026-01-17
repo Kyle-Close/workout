@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 
@@ -6,7 +7,8 @@ class DB:
 
     def __init__(self):
         try:
-            connection = sqlite3.connect("./data/workout.db")
+            db_path = os.getenv("DATABASE_PATH", "/app/data/workout.db")
+            connection = sqlite3.connect(db_path)
             connection.row_factory = sqlite3.Row
         except Exception as e:
             raise Exception(f"Error connecting to DB: {e}")
