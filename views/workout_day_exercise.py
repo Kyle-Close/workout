@@ -9,8 +9,9 @@ class WorkoutDayExercise:
     target_sets: int
     target_reps: int
     intensity: float
+    exercise_name: str
 
-    def __init__(self, cursorResult: tuple[int, int, int, int, int, int, float]):
+    def __init__(self, cursorResult: tuple[int, int, int, int, int, int, float, str]):
         self.id = cursorResult[0]
         self.exercise_id = cursorResult[1]
         self.program_id = cursorResult[2]
@@ -18,6 +19,7 @@ class WorkoutDayExercise:
         self.target_sets = cursorResult[4]
         self.target_reps = cursorResult[5]
         self.intensity = cursorResult[6]
+        self.exercise_name = cursorResult[7]
 
     @override
     def __str__(self) -> str:

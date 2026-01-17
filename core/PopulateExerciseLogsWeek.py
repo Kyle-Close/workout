@@ -4,6 +4,7 @@ from db.selects import (
     get_latest_program_week_entry,
     get_program_workout_days_excercises_data,
     get_user_one_rep_maxes_with_exercise_data,
+    get_user_recent_weight,
 )
 from db.inserts import create_exercise_log_entry
 
@@ -29,6 +30,14 @@ def populate_exercise_logs_week(db: DB, user_id: int, program_id: int):
         max = exercise_data.one_rep_max
         weight_increment = exercise_data.weight_increment
         intensity = entry.intensity / 100
+        weight = 0
 
-        weight = round_to_nearest(max * intensity, weight_increment)
+        if "assisted" in entry.exercise_name.lower():
+            current_body_weight = get_user_recent_weight(db, user_id)
+            weight = round_to_nearest(
+                current_body_weight - (max * intensity), weight_increment
+            )
+        else:
+            weight = round_to_nearest(max * intensity, weight_increment)
+
         create_exercise_log_entry(db, user_id, entry.id, new_week_num, weight)

@@ -15,6 +15,19 @@ def get_user(db: DB, username: str) -> User:
     return cast(User, db.connection.execute(statement, (username,)).fetchone())
 
 
+def get_user_recent_weight(db: DB, user_id: int):
+    statement = """
+        SELECT t1.weight
+        FROM user_weight AS t1
+        INNER JOIN users AS t2 ON t1.user_id = t2.id
+        WHERE t1.user_id = ? 
+        ORDER BY date DESC
+        LIMIT 1
+    """
+    value = db.connection.execute(statement, (user_id,)).fetchone()[0]
+    return value if value is not None else -1
+
+
 def get_latest_program_week_entry(db: DB, user_id: int, program_id: int) -> int:
     statement = """
         SELECT MAX(program_week) AS largest_program_week
@@ -62,9 +75,10 @@ def get_many_user_one_rep_maxes(
 
 def get_program_workout_days_excercises_data(db: DB, program_id: int):
     statement = """
-        SELECT t1.id, t1.exercise_id, t1.workout_program_id, t1.workout_day, t1.target_sets, t1.target_reps, t1.intensity
+        SELECT t1.id, t1.exercise_id, t1.workout_program_id, t1.workout_day, t1.target_sets, t1.target_reps, t1.intensity, t3.name
         FROM workout_day_exercises AS t1
-        INNER JOIN workout_programs as t2 ON t1.workout_program_id = t2.id
+        INNER JOIN workout_programs AS t2 ON t1.workout_program_id = t2.id
+        INNER JOIN exercises AS t3 ON t1.exercise_id = t3.id
         WHERE t1.workout_program_id = (?)
     """
     rows = db.connection.execute(statement, (program_id,)).fetchall()
@@ -80,13 +94,15 @@ def get_complete_day_calc_one_rep_max_query_res(
     placeholders = ",".join("?" for _ in exercise_log_ids)
 
     statement = f"""
-        SELECT t1.user_id, t2.exercise_id, t3.one_rep_max, t2.target_sets, t1.sets_completed, t1.reps_in_reserve, t2.workout_day, t2.workout_program_id, t2.id
+        SELECT t1.user_id, t2.exercise_id, t3.one_rep_max, t2.target_sets, t1.sets_completed, t1.reps_in_reserve, t2.workout_day, t2.workout_program_id, t2.id, t4.name
         FROM exercise_log AS t1
         INNER JOIN workout_day_exercises AS t2
             ON t1.workout_day_exercise_id = t2.id
         INNER JOIN user_one_rep_maxes AS t3
             ON t1.user_id = t3.user_id
            AND t2.exercise_id = t3.exercise_id
+        INNER JOIN exercises AS t4
+            ON t2.exercise_id = t4.id
         WHERE t3.user_id = ?
           AND t1.id IN ({placeholders});
     """

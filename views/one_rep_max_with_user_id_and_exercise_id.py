@@ -11,8 +11,11 @@ class CompleteDayCalcOneRepMaxView:
     workout_day: int
     workout_program_id: int
     workout_day_exercise_id: int
+    exercise_name: str
 
-    def __init__(self, cursorResult: tuple[int, int, float, int, int, int, int, int, int]):
+    def __init__(
+        self, cursorResult: tuple[int, int, float, int, int, int, int, int, int, str]
+    ):
         self.user_id = cursorResult[0]
         self.exercise_id = cursorResult[1]
         self.one_rep_max = cursorResult[2]
@@ -22,7 +25,7 @@ class CompleteDayCalcOneRepMaxView:
         self.workout_day = cursorResult[6]
         self.workout_program_id = cursorResult[7]
         self.workout_day_exercise_id = cursorResult[8]
-        
+        self.exercise_name = cursorResult[9]
 
     @override
     def __str__(self) -> str:

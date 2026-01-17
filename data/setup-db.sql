@@ -4,6 +4,14 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT NOT NULL UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS user_weight (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    weight INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS workout_programs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -54,13 +62,15 @@ CREATE TABLE IF NOT EXISTS exercise_log (
 -- INSERTS
 INSERT INTO users (username) VALUES ('Kyle Close');
 
+INSERT INTO user_weight (user_id, weight, date) VALUES (1, 195, date('now'));
+
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Bench Press', 'BARBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Squat', 'BARBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Deadlift', 'BARBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Overhead Press', 'BARBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Romanian Deadlift', 'BARBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Close Grip Bench Press', 'BARBELL', 5);
-INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Bench Press', 'DUMBBELL', 5);
+INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('DB Bench Press', 'DUMBBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Incline Bench Press', 'DUMBBELL', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Leg Press', 'MACHINE', 5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('T-Bar Rows', 'MACHINE', 2.5);
@@ -78,7 +88,7 @@ INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 8,
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 9, 420); -- Leg Press
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 10, 65); -- T-Bar Rows
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 11, 158); -- Lat Pull-Downs
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 12, 50); -- Assisted Pull-Ups
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 12, 170); -- Assisted Pull-Ups
 
 INSERT INTO workout_programs (user_id, name) VALUES (1, 'Stronger by Science Linear Progression - 5 Day Varient');
 
