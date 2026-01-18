@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 # For the current day view -> specific exercise
 class ExerciseEntryForDayView(BaseModel):
     exercise_log_id: int
@@ -11,3 +12,4 @@ class ExerciseEntryForDayView(BaseModel):
     target_reps: int
     sets_completed: int | None
     reps_in_reserve: int | None
+    optional: bool
