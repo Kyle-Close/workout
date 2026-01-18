@@ -64,8 +64,8 @@ def generate_logs_week_endpoint(
     return "Successfully generated a weeks worth of exercise logs for program"
 
 
-@app.patch("/complete-day")
-def complete_day_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
+@app.patch("/update-logs")
+def update_logs_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
     workout_day = -1
     workout_program_id = -1
     user_id = -1
