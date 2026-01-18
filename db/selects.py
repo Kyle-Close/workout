@@ -157,7 +157,7 @@ def get_current_workout_day_of_week(
         SELECT MIN(t2.workout_day)
         FROM exercise_log AS t1
         INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
-        WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ? AND t1.completed = 0
+        WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ? AND t1.completed = 0 AND t2.optional = 0
     """
     params = (user_id, program_id, week_num)
     value = db.connection.execute(statement, params).fetchone()[0]
