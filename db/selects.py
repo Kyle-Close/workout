@@ -85,7 +85,7 @@ def get_program_workout_days_excercises_data(db: DB, program_id: int):
     return [WorkoutDayExercise(row) for row in rows]
 
 
-def get_complete_day_calc_one_rep_max_query_res(
+def get_exercise_data_for_updating_maxes(
     db: DB, user_id: int, exercise_log_ids: list[int]
 ) -> list[CompleteDayCalcOneRepMaxView]:
     if not exercise_log_ids:

@@ -22,7 +22,6 @@ def update_many_exercise_logs(db: DB, exercise_logs: list[ExerciseLog]):
     ]
 
     _ = db.connection.executemany(statement, updates)
-    db.connection.commit()
 
 
 def update_one_rep_max(db: DB, user_id: int, exercise_id, max: float):
@@ -34,4 +33,3 @@ def update_one_rep_max(db: DB, user_id: int, exercise_id, max: float):
     params = [max, user_id, exercise_id]
 
     _ = db.connection.execute(statement, params)
-    db.connection.commit()

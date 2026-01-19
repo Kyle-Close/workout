@@ -11,4 +11,3 @@ def create_exercise_log_entry(
     _ = db.connection.execute(
         statement, (user_id, workout_day_exercise_id, program_week, weight)
     )
-    db.connection.commit()
