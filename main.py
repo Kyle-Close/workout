@@ -1,22 +1,13 @@
 from collections.abc import Generator
-from venv import logger
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from db.db import DB
-from db.selects import (
-    get_exercise_data_for_updating_maxes,
-    get_current_workout_day_of_week,
-    get_latest_program_week_entry,
-    get_number_of_days_in_program_week,
-    get_user_program_exercise_logs_by_week,
-)
-from db.updates import update_many_exercise_logs, update_one_rep_max
 from payloads.generate_logs_week import GenerateLogsWeekPayload
-from services import workout_service
 from services.workout_service import WorkoutService
 from services.one_rep_max_service import OneRepMaxService
+from services.exercise_log_service import ExerciseLogService
 from views.exercise_log import ExerciseLog
 
 app = FastAPI()
@@ -45,12 +36,16 @@ def get_db() -> Generator[DB, None, None]:
 def get_current_week_data(
     user_id: int, workout_program_id: int, db: DB = Depends(get_db)
 ):
-    current_week = get_latest_program_week_entry(db, user_id, workout_program_id)
-    data = get_user_program_exercise_logs_by_week(
-        db, user_id, workout_program_id, current_week
+    workout_service = WorkoutService(db)
+    exercise_logs_service = ExerciseLogService(db)
+
+    current_week = workout_service.get_current_week(user_id, workout_program_id)
+    current_day_of_week = exercise_logs_service.get_current_day_of_week(
+        user_id, workout_program_id, current_week
     )
-    current_day_of_week = get_current_workout_day_of_week(
-        db, user_id, workout_program_id, current_week
+
+    data = exercise_logs_service.get_exercise_logs_by_week(
+        user_id, workout_program_id, current_week
     )
 
     return {

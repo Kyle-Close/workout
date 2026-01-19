@@ -1,8 +1,20 @@
 from dataclasses import dataclass
+from typing import final
 from db.db import DB
-from db.selects import get_exercise_data_for_updating_maxes
-from db.updates import update_one_rep_max
+from repositories.one_rep_max_repository import OneRepMaxRepository
+from repositories.progression_repository import ProgressionRepository
 from views.exercise_log import ExerciseLog
+
+
+@final
+class OneRepMaxAdjustment:
+    """Progressive overload adjustments based on performance."""
+
+    MISSED_ONE_SET = -0.02
+    MISSED_MULTIPLE_SETS = -0.05
+    ONE_RIR = 0.01
+    TWO_RIR = 0.03
+    THREE_PLUS_RIR = 0.05
 
 
 @dataclass
@@ -23,6 +35,8 @@ class OneRepMaxService:
 
     def __init__(self, db: DB):
         self.db = db
+        self.progression_repository = ProgressionRepository(db)
+        self.one_rep_max_repository = OneRepMaxRepository(db)
 
     def update_maxes_from_completed_logs(
         self, completed_logs: list[ExerciseLog]
@@ -42,7 +56,12 @@ class OneRepMaxService:
         # Step 1: Fetch all data in single query
         user_id = completed_logs[0].user_id
         log_ids = [log.id for log in completed_logs]
-        exercise_data = get_exercise_data_for_updating_maxes(self.db, user_id, log_ids)
+
+        exercise_data = (
+            self.progression_repository.get_exercise_data_for_updating_maxes(
+                user_id, log_ids
+            )
+        )
 
         # Step 2: Build lookup table
         log_lookup = {log.workout_day_exercise_id: log for log in completed_logs}
@@ -82,23 +101,32 @@ class OneRepMaxService:
     def _apply_updates(self, updates: list[OneRepMaxUpdate]) -> None:
         """Apply one rep max updates to the database."""
         for update in updates:
-            update_one_rep_max(
-                self.db, update.user_id, update.exercise_id, update.new_max
+            self.one_rep_max_repository.update_one_rep_max(
+                update.user_id, update.exercise_id, update.new_max
             )
 
     def calculate_new_one_rep_max(self, old_max: float, set_delta: int, rip: int):
-        # set delta = amount of sets completed vs target. -2 would mean just 1 set completed if target is 3
-        # rip = reps in reserve on last set
-        percent_to_add = 0
+        """
+        Calculate adjusted 1RM based on performance.
+
+        Args:
+            current: Current one rep max
+            set_delta: Sets completed vs target (negative = missed sets)
+            rir: Reps in reserve on final set
+        """
+        adjustment = OneRepMaxAdjustment
 
         if set_delta == -1:
-            percent_to_add = -0.02
+            percent_to_add = adjustment.MISSED_ONE_SET
         elif set_delta < -1:
-            percent_to_add = -0.05
+            percent_to_add = adjustment.MISSED_MULTIPLE_SETS
         elif rip == 1:
-            percent_to_add = 0.01
+            percent_to_add = adjustment.ONE_RIR
         elif rip == 2:
-            percent_to_add = 0.03
+            percent_to_add = adjustment.TWO_RIR
         elif rip > 2:
-            percent_to_add = 0.05
+            percent_to_add = adjustment.THREE_PLUS_RIR
+        else:
+            percent_to_add = 0
+
         return old_max * (1 + percent_to_add)

@@ -1,28 +1,35 @@
+from typing import final
 from venv import logger
 
 from fastapi import HTTPException
 from db.db import DB
-from db.inserts import create_exercise_log_entry
-from db.selects import (
-    get_latest_program_week_entry,
-    get_program_workout_days_excercises_data,
-    get_user_one_rep_maxes_with_exercise_data,
-    get_user_recent_weight,
-)
-from db.updates import update_many_exercise_logs
 from helpers.Round import round_to_nearest
+from repositories.exercise_log_repository import ExerciseLogRepository
+from repositories.one_rep_max_repository import OneRepMaxRepository
+from repositories.user_repository import UserRepository
+from repositories.workout_program_repository import WorkoutProgramRepository
 from views.exercise_log import ExerciseLog
 
 
+@final
 class WorkoutService:
     db: DB
 
     def __init__(self, db: DB) -> None:
         self.db = db
+        self.exercise_log_repository = ExerciseLogRepository(db)
+        self.workout_program_repository = WorkoutProgramRepository(db)
+        self.one_rep_max_repository = OneRepMaxRepository(db)
+        self.user_repository = UserRepository(db)
+
+    def get_current_week(self, user_id: int, workout_program_id: int):
+        return self.workout_program_repository.get_latest_program_week_entry(
+            user_id, workout_program_id
+        )
 
     def update_exercise_logs(self, logs: list[ExerciseLog]):
         try:
-            update_many_exercise_logs(self.db, logs)
+            self.exercise_log_repository.update_many_exercise_logs(logs)
         except Exception as e:
             logger.error(f"Failed to update logs: {e}")
             raise HTTPException(
@@ -30,13 +37,22 @@ class WorkoutService:
             )
 
     def populate_exercise_logs_week(self, user_id: int, program_id: int):
-        workout_day_entries = get_program_workout_days_excercises_data(
-            self.db, program_id
+        workout_day_entries = (
+            self.workout_program_repository.get_program_workout_days_excercises_data(
+                program_id
+            )
         )
-        one_rep_maxes_with_exercise = get_user_one_rep_maxes_with_exercise_data(
-            self.db, user_id
+        one_rep_maxes_with_exercise = (
+            self.one_rep_max_repository.get_user_one_rep_maxes_with_exercise_data(
+                user_id
+            )
         )
-        new_week_num = get_latest_program_week_entry(self.db, user_id, program_id) + 1
+        new_week_num = (
+            self.workout_program_repository.get_latest_program_week_entry(
+                user_id, program_id
+            )
+            + 1
+        )
 
         for entry in workout_day_entries:
             exercise_data = next(
@@ -57,11 +73,15 @@ class WorkoutService:
             weight = 0
 
             if "assisted" in entry.exercise_name.lower():
-                current_body_weight = get_user_recent_weight(self.db, user_id)
+                current_body_weight = self.user_repository.get_user_recent_weight(
+                    user_id
+                )
                 weight = round_to_nearest(
                     current_body_weight - (max * intensity), weight_increment
                 )
             else:
                 weight = round_to_nearest(max * intensity, weight_increment)
 
-            create_exercise_log_entry(self.db, user_id, entry.id, new_week_num, weight)
+            self.exercise_log_repository.create_exercise_log_entry(
+                user_id, entry.id, new_week_num, weight
+            )
