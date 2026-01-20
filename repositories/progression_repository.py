@@ -39,4 +39,4 @@ class ProgressionRepository:
         params = [user_id, *exercise_log_ids]
 
         rows = self.db.connection.execute(statement, params).fetchall()
-        return [CompleteDayCalcOneRepMaxView(row) for row in rows]
+        return [CompleteDayCalcOneRepMaxView(**dict(row)) for row in rows]

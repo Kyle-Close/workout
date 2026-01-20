@@ -38,7 +38,7 @@ class WorkoutService:
 
     def populate_exercise_logs_week(self, user_id: int, program_id: int):
         workout_day_entries = (
-            self.workout_program_repository.get_program_workout_days_excercises_data(
+            self.workout_program_repository.get_program_workout_days_excercise_data(
                 program_id
             )
         )

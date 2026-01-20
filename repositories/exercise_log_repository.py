@@ -1,8 +1,6 @@
 from db.db import DB
 from views.exercise_log import ExerciseLog
 from views.get_current_week_view import ExerciseEntryForDayView
-from views.workout_day_exercise import WorkoutDayExercise
-
 
 class ExerciseLogRepository:
     db: DB
