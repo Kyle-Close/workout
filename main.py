@@ -33,20 +33,14 @@ def get_db() -> Generator[DB, None, None]:
 
 
 @app.get("/get-current-week-data")
-def get_current_week_data(
-    user_id: int, workout_program_id: int, db: DB = Depends(get_db)
-):
+def get_current_week_data(user_id: int, workout_program_id: int, db: DB = Depends(get_db)):
     workout_service = WorkoutService(db)
     exercise_logs_service = ExerciseLogService(db)
 
     current_week = workout_service.get_current_week(user_id, workout_program_id)
-    current_day_of_week = exercise_logs_service.get_current_day_of_week(
-        user_id, workout_program_id, current_week
-    )
+    current_day_of_week = exercise_logs_service.get_current_day_of_week(user_id, workout_program_id, current_week)
 
-    data = exercise_logs_service.get_exercise_logs_by_week(
-        user_id, workout_program_id, current_week
-    )
+    data = exercise_logs_service.get_exercise_logs_by_week(user_id, workout_program_id, current_week)
 
     return {
         "currentDayOfWeek": current_day_of_week,
@@ -55,13 +49,9 @@ def get_current_week_data(
 
 
 @app.post("/generate-logs-week")
-def generate_logs_week_endpoint(
-    payload: GenerateLogsWeekPayload, db: DB = Depends(get_db)
-):
+def generate_logs_week_endpoint(payload: GenerateLogsWeekPayload, db: DB = Depends(get_db)):
     workout_service = WorkoutService(db)
-    workout_service.populate_exercise_logs_week(
-        payload.user_id, payload.workout_program_id
-    )
+    workout_service.populate_exercise_logs_week(payload.user_id, payload.workout_program_id)
     return "Successfully generated a weeks worth of exercise logs for program"
 
 

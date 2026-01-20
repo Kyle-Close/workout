@@ -8,3 +8,13 @@ dependencies = [
     "fastapi[standard]>=0.128.0",
     "uvicorn>=0.40.0",
 ]
+
+[tool.ruff.lint]
+select = ["E", "F", "B"]
+ignore = ["E501"]  # Ignore line-too-long errors
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path"]
+
+[tool.pyright]
+reportCallInDefaultInitializer = false
