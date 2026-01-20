@@ -1,6 +1,9 @@
+from typing import cast
 from db.db import DB
+from views.detailed_exercise_log_info import DetailedExerciseLog
 from views.exercise_log import ExerciseLog
 from views.get_current_week_view import ExerciseEntryForDayView
+
 
 class ExerciseLogRepository:
     db: DB
@@ -33,9 +36,7 @@ class ExerciseLogRepository:
         rows = self.db.connection.execute(statement, params).fetchall()
         return [ExerciseEntryForDayView(**dict(row)) for row in rows]
 
-    def get_current_workout_day_of_week(
-        self, user_id: int, program_id: int, week_num: int
-    ):
+    def get_current_workout_day_of_week(self, user_id: int, program_id: int, week_num: int):
         statement = """
             SELECT MIN(t2.workout_day)
             FROM exercise_log AS t1
@@ -46,16 +47,12 @@ class ExerciseLogRepository:
         value = self.db.connection.execute(statement, params).fetchone()[0]
         return value if value is not None else 0
 
-    def create_exercise_log_entry(
-        self, user_id: int, workout_day_exercise_id: int, program_week: int, weight: int
-    ):
+    def create_exercise_log_entry(self, user_id: int, workout_day_exercise_id: int, program_week: int, weight: int):
         statement = """
             INSERT INTO exercise_log (user_id, workout_day_exercise_id, program_week, weight)
             VALUES (?, ?, ?, ?)
         """
-        _ = self.db.connection.execute(
-            statement, (user_id, workout_day_exercise_id, program_week, weight)
-        )
+        _ = self.db.connection.execute(statement, (user_id, workout_day_exercise_id, program_week, weight))
 
     def update_many_exercise_logs(self, exercise_logs: list[ExerciseLog]):
         statement = """
@@ -77,3 +74,49 @@ class ExerciseLogRepository:
         ]
 
         _ = self.db.connection.executemany(statement, updates)
+
+    def get_count_of_incomplete_mandatory_logs_by_week(self, user_id: int, program_id: int, week_num: int) -> int:
+        statement = """
+            SELECT COUNT(*)
+            FROM exercise_log AS t1
+            INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
+            WHERE t1.user_id = ? AND t1.program_week = ? AND t2.workout_program_id = ? AND t2.optional = 0 AND t1.completed = 0
+        """
+        params = (user_id, week_num, program_id)
+        return cast(int, self.db.connection.execute(statement, params).fetchone()[0])
+
+    def get_detailed_log_info(self, log_ids: list[int]) -> list[DetailedExerciseLog]:
+        if not log_ids:
+            return []
+        placeholders = ",".join("?" for _ in log_ids)
+        statement = f"""
+            SELECT
+                t1.id AS exercise_log_id,
+                t1.user_id,
+                t1.workout_day_exercise_id,
+                t1.program_week,
+                t1.weight,
+                t1.sets_completed,
+                t1.reps_in_reserve,
+                t1.notes,
+                t1.completed,
+                t2.workout_program_id,
+                t2.workout_day,
+                t2.target_sets,
+                t2.target_reps,
+                t2.intensity,
+                t2.optional,
+                t3.id AS exercise_id,
+                t3.name AS exercise_name,
+                t3.equipment_type,
+                t3.weight_increment,
+                t4.name AS workout_program_name
+            FROM exercise_log AS t1
+            INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
+            INNER JOIN exercises AS t3 ON t2.exercise_id = t3.id
+            INNER JOIN workout_programs AS t4 ON t2.workout_program_id = t4.id
+            WHERE t1.id IN ({placeholders})
+        """
+        params = (*log_ids,)
+        rows = self.db.connection.execute(statement, params).fetchall()
+        return [DetailedExerciseLog(**dict(row)) for row in rows]

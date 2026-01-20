@@ -10,13 +10,11 @@ class ExerciseLogService:
         self.exercise_log_repository = ExerciseLogRepository(db)
 
     def get_exercise_logs_by_week(self, user_id: int, program_id: int, week_num: int):
-        return self.exercise_log_repository.get_user_program_exercise_logs_by_week(
-            user_id, program_id, week_num
-        )
+        return self.exercise_log_repository.get_user_program_exercise_logs_by_week(user_id, program_id, week_num)
 
-    def get_current_day_of_week(
-        self, user_id: int, workout_program_id: int, week_num: int
-    ):
-        return self.exercise_log_repository.get_current_workout_day_of_week(
-            user_id, workout_program_id, week_num
-        )
+    def get_current_day_of_week(self, user_id: int, workout_program_id: int, week_num: int):
+        return self.exercise_log_repository.get_current_workout_day_of_week(user_id, workout_program_id, week_num)
+
+    def get_detailed_log_info(self, log_ids: list[int]):
+        """Returns all the info we might need about a specific log. Using table joins to get the info"""
+        return self.exercise_log_repository.get_detailed_log_info(log_ids)

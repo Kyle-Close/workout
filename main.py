@@ -37,7 +37,7 @@ def get_current_week_data(user_id: int, workout_program_id: int, db: DB = Depend
     workout_service = WorkoutService(db)
     exercise_logs_service = ExerciseLogService(db)
 
-    current_week = workout_service.get_current_week(user_id, workout_program_id)
+    current_week = workout_service.get_latest_program_week_entry(user_id, workout_program_id)
     current_day_of_week = exercise_logs_service.get_current_day_of_week(user_id, workout_program_id, current_week)
 
     data = exercise_logs_service.get_exercise_logs_by_week(user_id, workout_program_id, current_week)
@@ -61,17 +61,31 @@ def update_logs_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
         raise HTTPException(status_code=400, detail="No exercise logs provided")
 
     workout_service = WorkoutService(db)
+    one_rep_max_service = OneRepMaxService(db)
+    exercise_log_service = ExerciseLogService(db)
+
+    # 1. Update exercise logs with payload data
     workout_service.update_exercise_logs(payload)
 
-    one_rep_max_service = OneRepMaxService(db)
+    # 2. Update user 1 rep maxes based on the updated logs
     one_rep_max_updates = one_rep_max_service.update_maxes_from_completed_logs(payload)
 
-    # 3. Check if we just completed the final day of the week. If we did, we need to generate a new week of logs
-    # TODO
+    # 3. Check if we need to generate a new week of logs
+    first_log_detailed = exercise_log_service.get_detailed_log_info([payload[0].id])
+    details = first_log_detailed[0]
+
+    latest_week = workout_service.get_latest_program_week_entry(details.user_id, details.workout_program_id)
+
+    should_populate_new_week = workout_service.check_is_week_complete(
+        details.user_id, details.workout_program_id, latest_week
+    )
+
+    if should_populate_new_week:
+        workout_service.populate_exercise_logs_week(details.user_id, details.workout_program_id)
 
     return {
         "logs_updated": len(one_rep_max_updates),
         "maxes_updated": one_rep_max_updates,
-        "week_completed": False,  # TODO - for now, hard-coding
-        "message": f"Successfully updated {len(payload)} exercise log(s) and {len(one_rep_max_updates)} one rep max(es). Week completed! Generated next week's exercise logs.",
+        "generated_new_week": should_populate_new_week,
+        "message": f"Successfully updated {len(payload)} exercise log(s) and {len(one_rep_max_updates)} one rep max(es).",
     }

@@ -23,7 +23,17 @@ class ProgressionRepository:
         placeholders = ",".join("?" for _ in exercise_log_ids)
 
         statement = f"""
-            SELECT t1.user_id, t2.exercise_id, t3.one_rep_max, t2.target_sets, t1.sets_completed, t1.reps_in_reserve, t2.workout_day, t2.workout_program_id, t2.id, t4.name
+            SELECT 
+                t1.user_id, 
+                t2.exercise_id, 
+                t3.one_rep_max, 
+                t2.target_sets,
+                t1.sets_completed, 
+                t1.reps_in_reserve, 
+                t2.workout_day, 
+                t2.workout_program_id, 
+                t2.id AS workout_day_exercise_id, 
+                t4.name AS exercise_name
             FROM exercise_log AS t1
             INNER JOIN workout_day_exercises AS t2
                 ON t1.workout_day_exercise_id = t2.id
