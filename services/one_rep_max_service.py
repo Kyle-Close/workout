@@ -4,10 +4,11 @@ from db.db import DB
 from repositories.one_rep_max_repository import OneRepMaxRepository
 from repositories.progression_repository import ProgressionRepository
 from views.exercise_log import ExerciseLog
+from enum import Enum
 
 
 @final
-class OneRepMaxAdjustment:
+class OneRepMaxAdjustment(float, Enum):
     """Progressive overload adjustments based on performance."""
 
     MISSED_ONE_SET = -0.02
@@ -105,7 +106,7 @@ class OneRepMaxService:
                 update.user_id, update.exercise_id, update.new_max
             )
 
-    def calculate_new_one_rep_max(self, old_max: float, set_delta: int, rip: int):
+    def calculate_new_one_rep_max(self, old_max: float, set_delta: int, reps_in_reserve: int):
         """
         Calculate adjusted 1RM based on performance.
 
@@ -120,11 +121,11 @@ class OneRepMaxService:
             percent_to_add = adjustment.MISSED_ONE_SET
         elif set_delta < -1:
             percent_to_add = adjustment.MISSED_MULTIPLE_SETS
-        elif rip == 1:
+        elif reps_in_reserve == 1:
             percent_to_add = adjustment.ONE_RIR
-        elif rip == 2:
+        elif reps_in_reserve == 2:
             percent_to_add = adjustment.TWO_RIR
-        elif rip > 2:
+        elif reps_in_reserve > 2:
             percent_to_add = adjustment.THREE_PLUS_RIR
         else:
             percent_to_add = 0

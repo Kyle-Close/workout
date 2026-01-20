@@ -1,6 +1,5 @@
+import logging
 from typing import final
-from venv import logger
-
 from fastapi import HTTPException
 from db.db import DB
 from helpers.Round import round_to_nearest
@@ -10,6 +9,7 @@ from repositories.user_repository import UserRepository
 from repositories.workout_program_repository import WorkoutProgramRepository
 from views.exercise_log import ExerciseLog
 
+logger = logging.getLogger(__name__)
 
 @final
 class WorkoutService:
@@ -67,7 +67,7 @@ class WorkoutService:
             if exercise_data is None:
                 raise Exception("Could not find exercise data for workout day entry")
 
-            max = exercise_data.one_rep_max
+            one_rep_max = exercise_data.one_rep_max
             weight_increment = exercise_data.weight_increment
             intensity = entry.intensity / 100
             weight = 0
@@ -77,10 +77,10 @@ class WorkoutService:
                     user_id
                 )
                 weight = round_to_nearest(
-                    current_body_weight - (max * intensity), weight_increment
+                    current_body_weight - (one_rep_max * intensity), weight_increment
                 )
             else:
-                weight = round_to_nearest(max * intensity, weight_increment)
+                weight = round_to_nearest(one_rep_max * intensity, weight_increment)
 
             self.exercise_log_repository.create_exercise_log_entry(
                 user_id, entry.id, new_week_num, weight

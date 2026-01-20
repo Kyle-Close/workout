@@ -1,6 +1,5 @@
 from typing import final
 from db.db import DB
-from repositories import exercise_log_repository
 from repositories.exercise_log_repository import ExerciseLogRepository
 
 
