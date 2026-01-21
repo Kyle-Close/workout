@@ -14,3 +14,4 @@ class ExerciseEntryForDayView(BaseModel):
     reps_in_reserve: int | None
     optional: bool
     workout_day_exercise_id: int
+    completed: bool

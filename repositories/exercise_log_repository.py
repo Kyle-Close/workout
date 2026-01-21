@@ -26,7 +26,8 @@ class ExerciseLogRepository:
                 t1.sets_completed,
                 t1.reps_in_reserve,
                 t2.optional,
-                t2.id AS workout_day_exercise_id
+                t2.id AS workout_day_exercise_id,
+                t1.completed
             FROM exercise_log AS t1
             INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
             INNER JOIN exercises AS t3 ON t2.exercise_id = t3.id
