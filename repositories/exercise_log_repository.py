@@ -1,4 +1,3 @@
-from typing import cast
 from db.db import DB
 from views.detailed_exercise_log_info import DetailedExerciseLog
 from views.exercise_log import ExerciseLog
@@ -37,7 +36,7 @@ class ExerciseLogRepository:
         rows = self.db.connection.execute(statement, params).fetchall()
         return [ExerciseEntryForDayView(**dict(row)) for row in rows]
 
-    def get_current_workout_day_of_week(self, user_id: int, program_id: int, week_num: int):
+    def get_current_workout_day_of_week(self, user_id: int, program_id: int, week_num: int) -> int:
         statement = """
             SELECT MIN(t2.workout_day)
             FROM exercise_log AS t1
@@ -45,8 +44,8 @@ class ExerciseLogRepository:
             WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ? AND t1.completed = 0 AND t2.optional = 0
         """
         params = (user_id, program_id, week_num)
-        value = self.db.connection.execute(statement, params).fetchone()[0]
-        return value if value is not None else 0
+        result = self.db.connection.execute(statement, params).fetchone()
+        return result[0] if result is not None and result[0] is not None else 0
 
     def create_exercise_log_entry(self, user_id: int, workout_day_exercise_id: int, program_week: int, weight: int):
         statement = """
@@ -84,7 +83,8 @@ class ExerciseLogRepository:
             WHERE t1.user_id = ? AND t1.program_week = ? AND t2.workout_program_id = ? AND t2.optional = 0 AND t1.completed = 0
         """
         params = (user_id, week_num, program_id)
-        return cast(int, self.db.connection.execute(statement, params).fetchone()[0])
+        result = self.db.connection.execute(statement, params).fetchone()
+        return int(result[0]) if result is not None else 0
 
     def get_detailed_log_info(self, log_ids: list[int]) -> list[DetailedExerciseLog]:
         if not log_ids:

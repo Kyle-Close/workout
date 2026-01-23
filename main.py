@@ -1,13 +1,14 @@
+import sqlite3
 from collections.abc import Generator
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from db.db import DB
+from db.db import DB, DatabaseConnectionError
 from payloads.generate_logs_week import GenerateLogsWeekPayload
-from services.workout_service import WorkoutService
-from services.one_rep_max_service import OneRepMaxService
 from services.exercise_log_service import ExerciseLogService
+from services.one_rep_max_service import OneRepMaxService
+from services.workout_service import WorkoutService
 from views.exercise_log import ExerciseLog
 
 app = FastAPI()
@@ -21,11 +22,15 @@ app.add_middleware(
 
 
 def get_db() -> Generator[DB, None, None]:
-    db = DB()
+    try:
+        db = DB()
+    except DatabaseConnectionError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+
     try:
         yield db
         db.connection.commit()
-    except Exception:
+    except sqlite3.Error:
         db.connection.rollback()
         raise
     finally:
@@ -62,30 +67,12 @@ def update_logs_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
 
     workout_service = WorkoutService(db)
     one_rep_max_service = OneRepMaxService(db)
-    exercise_log_service = ExerciseLogService(db)
 
-    # 1. Update exercise logs with payload data
-    workout_service.update_exercise_logs(payload)
-
-    # 2. Update user 1 rep maxes based on the updated logs
-    one_rep_max_updates = one_rep_max_service.update_maxes_from_completed_logs(payload)
-
-    # 3. Check if we need to generate a new week of logs
-    first_log_detailed = exercise_log_service.get_detailed_log_info([payload[0].id])
-    details = first_log_detailed[0]
-
-    latest_week = workout_service.get_latest_program_week_entry(details.user_id, details.workout_program_id)
-
-    should_populate_new_week = workout_service.check_is_week_complete(
-        details.user_id, details.workout_program_id, latest_week
-    )
-
-    if should_populate_new_week:
-        workout_service.populate_exercise_logs_week(details.user_id, details.workout_program_id)
+    result = workout_service.process_log_updates(payload, one_rep_max_service)
 
     return {
-        "logs_updated": len(one_rep_max_updates),
-        "maxes_updated": one_rep_max_updates,
-        "generated_new_week": should_populate_new_week,
-        "message": f"Successfully updated {len(payload)} exercise log(s) and {len(one_rep_max_updates)} one rep max(es).",
+        "logs_updated": result.logs_updated,
+        "maxes_updated": result.maxes_updated,
+        "generated_new_week": result.generated_new_week,
+        "message": f"Successfully updated {result.logs_updated} exercise log(s) and {len(result.maxes_updated)} one rep max(es).",
     }
