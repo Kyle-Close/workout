@@ -39,9 +39,7 @@ class OneRepMaxService:
         self.progression_repository = ProgressionRepository(db)
         self.one_rep_max_repository = OneRepMaxRepository(db)
 
-    def update_maxes_from_completed_logs(
-        self, completed_logs: list[ExerciseLog]
-    ) -> list[OneRepMaxUpdate]:
+    def update_maxes_from_completed_logs(self, completed_logs: list[ExerciseLog]) -> list[OneRepMaxUpdate]:
         """
         Calculate and update one rep maxes for completed exercise logs.
 
@@ -58,11 +56,7 @@ class OneRepMaxService:
         user_id = completed_logs[0].user_id
         log_ids = [log.id for log in completed_logs]
 
-        exercise_data = (
-            self.progression_repository.get_exercise_data_for_updating_maxes(
-                user_id, log_ids
-            )
-        )
+        exercise_data = self.progression_repository.get_exercise_data_for_updating_maxes(user_id, log_ids)
 
         # Step 2: Build lookup table
         log_lookup = {log.workout_day_exercise_id: log for log in completed_logs}
@@ -77,16 +71,14 @@ class OneRepMaxService:
 
             # Calculate new max
             set_delta = log.sets_completed - data.target_sets
-            new_max = self.calculate_new_one_rep_max(
-                data.one_rep_max, set_delta, log.reps_in_reserve
-            )
+            new_max = self.calculate_new_one_rep_max(data.current_one_rep_max, set_delta, log.reps_in_reserve)
 
             # Track the update
             updates.append(
                 OneRepMaxUpdate(
                     user_id=data.user_id,
                     exercise_id=data.exercise_id,
-                    old_max=data.one_rep_max,
+                    old_max=data.current_one_rep_max,
                     new_max=new_max,
                     exercise_name=data.exercise_name,
                     set_delta=set_delta,
@@ -102,9 +94,7 @@ class OneRepMaxService:
     def _apply_updates(self, updates: list[OneRepMaxUpdate]) -> None:
         """Apply one rep max updates to the database."""
         for update in updates:
-            self.one_rep_max_repository.update_one_rep_max(
-                update.user_id, update.exercise_id, update.new_max
-            )
+            self.one_rep_max_repository.update_one_rep_max(update.user_id, update.exercise_id, update.new_max)
 
     def calculate_new_one_rep_max(self, old_max: float, set_delta: int, reps_in_reserve: int):
         """

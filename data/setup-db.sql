@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS user_one_rep_maxes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     exercise_id INTEGER NOT NULL,
-    one_rep_max REAL NOT NULL,
+    original_one_rep_max NOT NULL,
+    current_one_rep_max REAL NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (exercise_id) REFERENCES exercises(id)
 );
@@ -92,34 +93,36 @@ INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Plank', 
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Hip Thrusts', 'MACHINE', 2.5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Neutral-Grip Pulldown', 'MACHINE', 2.5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('DB Curls', 'DUMBBELL', 5);
+INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Squat (2)', 'BARBELL', 5);
 
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 1, 160); -- Bench Press
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 2, 180); -- Squat
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 3, 212); -- Deadlift
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 4, 100); -- Overhead Press
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 5, 210); -- Romanian Deadlift
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 6, 120); -- Close Grip Bench Press
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 7, 70); -- Dumbbell Bench Press
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 8, 58); -- Incline Bench Press
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 9, 420); -- Leg Press
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 10, 65); -- T-Bar Rows
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 11, 158); -- Lat Pull-Downs
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 12, 170); -- Assisted Pull-Ups
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 13, 70);  -- Bulgarian Split Squat
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 14, 150); -- Seated Machine Row
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 15, 0);   -- Hanging Leg Raises
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 16, 110);  -- Seated Leg Curl
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 17, 70);  -- Reverse Pec Deck
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 18, 85);  -- Cable Tricep Pushdown
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 19, 145); -- Seated Cable Row
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 20, 55);  -- Face Pulls
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 21, 45);  -- Hammer Curls
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 22, 30);  -- Lateral Raises
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 23, 260); -- Calf Raises
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 24, 0);   -- Plank
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 25, 240); -- Hip Thrusts
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 26, 130); -- Neutral-Grip Pulldown
-INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (1, 27, 35);  -- DB Curls
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 1, 155, 155); -- Bench Press
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 2, 170, 170); -- Squat
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 3, 200, 200); -- Deadlift
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 4, 90, 90); -- Overhead Press (Push Press)
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 5, 190, 190); -- Romanian Deadlift
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 6, 100, 100); -- Close Grip Bench Press
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 7, 65, 65); -- Dumbbell Bench Press
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 8, 50, 50); -- Incline Bench Press
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 9, 380, 380); -- Leg Press
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 10, 60, 60); -- T-Bar Rows
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 11, 150, 150); -- Lat Pull-Downs
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 12, 85, 170); -- Assisted Pull-Ups
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 13, 70, 70);  -- Bulgarian Split Squat
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 14, 150, 150); -- Seated Machine Row
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 15, 0, 0);   -- Hanging Leg Raises
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 16, 110, 110);  -- Seated Leg Curl
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 17, 70, 70);  -- Reverse Pec Deck
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 18, 85, 85);  -- Cable Tricep Pushdown
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 19, 145, 145); -- Seated Cable Row
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 20, 55, 55);  -- Face Pulls
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 21, 45, 45);  -- Hammer Curls
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 22, 30, 30);  -- Lateral Raises
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 23, 260, 260); -- Calf Raises
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 24, 0, 0);   -- Plank
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 25, 240, 240); -- Hip Thrusts
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 26, 130, 130); -- Neutral-Grip Pulldown
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 27, 35, 35);  -- DB Curls
+INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 28, 170, 170); -- Squat Accessory
 
 INSERT INTO workout_programs (user_id, name) VALUES (1, 'Stronger by Science Linear Progression - 5 Day Varient');
 
@@ -134,7 +137,7 @@ INSERT INTO workout_day_exercises (exercise_id, workout_program_id, workout_day,
 
 -- SBS (5) - Day 2
 INSERT INTO workout_day_exercises (exercise_id, workout_program_id, workout_day, target_sets, target_reps, intensity) VALUES (1, 1, 2, 3, 3, 87.5); -- Bench Press
-INSERT INTO workout_day_exercises (exercise_id, workout_program_id, workout_day, target_sets, target_reps, intensity) VALUES (2, 1, 2, 3, 5, 82.5); -- Squat
+INSERT INTO workout_day_exercises (exercise_id, workout_program_id, workout_day, target_sets, target_reps, intensity) VALUES (28, 1, 2, 3, 5, 82.5); -- Squat Accessory
 -- SBS (5) - Day 2 (Optionals)
 INSERT INTO workout_day_exercises (exercise_id, workout_program_id, workout_day, target_sets, target_reps, intensity, optional) VALUES (16, 1, 2, 3, 12, 75, 1); -- Seated Leg Curl
 INSERT INTO workout_day_exercises (exercise_id, workout_program_id, workout_day, target_sets, target_reps, intensity, optional) VALUES (17, 1, 2, 3, 15, 70, 1); -- Reverse Pec Deck

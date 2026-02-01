@@ -26,7 +26,7 @@ class ProgressionRepository:
             SELECT 
                 t1.user_id, 
                 t2.exercise_id, 
-                t3.one_rep_max, 
+                t3.current_one_rep_max, 
                 t2.target_sets,
                 t1.sets_completed, 
                 t1.reps_in_reserve, 

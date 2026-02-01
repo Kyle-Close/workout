@@ -53,9 +53,11 @@ class WorkoutService:
             )
 
             if exercise_data is None:
-                raise ValueError(f"Could not find exercise data for workout day entry (exercise_id={entry.exercise_id})")
+                raise ValueError(
+                    f"Could not find exercise data for workout day entry (exercise_id={entry.exercise_id})"
+                )
 
-            one_rep_max = exercise_data.one_rep_max
+            one_rep_max = exercise_data.current_one_rep_max
             weight_increment = exercise_data.weight_increment
             intensity = entry.intensity / 100
 
@@ -96,9 +98,7 @@ class WorkoutService:
         details = first_log_detailed[0]
 
         latest_week = self.get_latest_program_week_entry(details.user_id, details.workout_program_id)
-        should_populate_new_week = self.check_is_week_complete(
-            details.user_id, details.workout_program_id, latest_week
-        )
+        should_populate_new_week = self.check_is_week_complete(details.user_id, details.workout_program_id, latest_week)
 
         if should_populate_new_week:
             self.populate_exercise_logs_week(details.user_id, details.workout_program_id)
