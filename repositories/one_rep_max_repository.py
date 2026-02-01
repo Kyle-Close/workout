@@ -1,5 +1,6 @@
 from db.db import DB
 from views.user_one_rep_max_with_exercise import UserOneRepMaxWithExercise
+from views.user_one_rep_max_with_name import UserOneRepMaxWithName
 
 
 class OneRepMaxRepository:
@@ -39,3 +40,18 @@ class OneRepMaxRepository:
         params = [max, user_id, exercise_id]
 
         _ = self.db.connection.execute(statement, params)
+
+    def get_all_user_maxes(self, user_id: int):
+        """
+        Get all user one rep max table data
+        """
+        statement = """
+            SELECT
+                t1.*,
+                t2.name as exercise_name
+            FROM user_one_rep_maxes AS t1
+            INNER JOIN exercises AS t2 ON t1.exercise_id = t2.id
+            WHERE t1.user_id = ?
+        """
+        rows = self.db.connection.execute(statement, (user_id,)).fetchall()
+        return [UserOneRepMaxWithName(**dict(row)) for row in rows]

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.db import DB, DatabaseConnectionError
 from payloads.generate_logs_week import GenerateLogsWeekPayload
+from services import one_rep_max_service
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
 from services.workout_service import WorkoutService
@@ -76,3 +77,9 @@ def update_logs_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
         "generated_new_week": result.generated_new_week,
         "message": f"Successfully updated {result.logs_updated} exercise log(s) and {len(result.maxes_updated)} one rep max(es).",
     }
+
+
+@app.get("/one-rep-maxes")
+def get_one_rep_maxes(user_id: int, db: DB = Depends(get_db)):
+    one_rep_max_service = OneRepMaxService(db)
+    return one_rep_max_service.user_one_rep_max_data(user_id)

@@ -121,3 +121,7 @@ class OneRepMaxService:
             percent_to_add = 0
 
         return old_max * (1 + percent_to_add)
+
+    def user_one_rep_max_data(self, user_id: int):
+        maxes = self.one_rep_max_repository.get_all_user_maxes(user_id)
+        return maxes
