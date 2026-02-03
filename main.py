@@ -83,3 +83,10 @@ def update_logs_endpoint(payload: list[ExerciseLog], db: DB = Depends(get_db)):
 def get_one_rep_maxes(user_id: int, db: DB = Depends(get_db)):
     one_rep_max_service = OneRepMaxService(db)
     return one_rep_max_service.user_one_rep_max_data(user_id)
+
+
+@app.get("/active-week")
+def get_active_week(user_id: int, workout_program_id: int, db: DB = Depends(get_db)):
+    workout_service = WorkoutService(db)
+    current_week = workout_service.get_latest_program_week_entry(user_id, workout_program_id)
+    return current_week

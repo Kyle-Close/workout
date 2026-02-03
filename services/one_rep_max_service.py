@@ -71,7 +71,7 @@ class OneRepMaxService:
 
             # Calculate new max
             set_delta = log.sets_completed - data.target_sets
-            new_max = self.calculate_new_one_rep_max(data.current_one_rep_max, set_delta, log.reps_in_reserve)
+            new_max = round(self.calculate_new_one_rep_max(data.current_one_rep_max, set_delta, log.reps_in_reserve), 2)
 
             # Track the update
             updates.append(
