@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.db import DB, DatabaseConnectionError
 from payloads.generate_logs_week import GenerateLogsWeekPayload
-from services import one_rep_max_service
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
 from services.workout_service import WorkoutService
@@ -90,3 +89,9 @@ def get_active_week(user_id: int, workout_program_id: int, db: DB = Depends(get_
     workout_service = WorkoutService(db)
     current_week = workout_service.get_latest_program_week_entry(user_id, workout_program_id)
     return current_week
+
+
+@app.get("/week-logs")
+def get_active_week(user_id: int, workout_program_id: int, week_num: int, db: DB = Depends(get_db)):
+    exercise_log_service = ExerciseLogService(db)
+    return exercise_log_service.get_exercise_logs_by_week(user_id, workout_program_id, week_num)
