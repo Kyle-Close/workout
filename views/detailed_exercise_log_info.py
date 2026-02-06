@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from enums.equipment_type import EquipmentType
+
 
 class DetailedExerciseLog(BaseModel):
     # exercise_log
@@ -22,7 +24,7 @@ class DetailedExerciseLog(BaseModel):
     # exercises
     exercise_id: int
     exercise_name: str
-    equipment_type: str
+    equipment_type: EquipmentType
     weight_increment: float
     # workout_programs
     workout_program_name: str

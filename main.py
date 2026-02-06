@@ -1,10 +1,12 @@
 import sqlite3
 from collections.abc import Generator
 
+from enums.equipment_type import EquipmentType
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from db.db import DB, DatabaseConnectionError
+from helpers.plate_calculator import PlateCalculator
 from payloads.generate_logs_week import GenerateLogsWeekPayload
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
@@ -45,11 +47,16 @@ def get_current_week_data(user_id: int, workout_program_id: int, db: DB = Depend
     current_week = workout_service.get_latest_program_week_entry(user_id, workout_program_id)
     current_day_of_week = exercise_logs_service.get_current_day_of_week(user_id, workout_program_id, current_week)
 
-    data = exercise_logs_service.get_exercise_logs_by_week(user_id, workout_program_id, current_week)
+    exerciseLogs = exercise_logs_service.get_exercise_logs_by_week(user_id, workout_program_id, current_week)
+    
+    for log in exerciseLogs:
+        if log.equipment_type == EquipmentType.BARBELL:
+            pCalc = PlateCalculator(log.weight)
+            log.plates = pCalc.calculate()
 
     return {
         "currentDayOfWeek": current_day_of_week,
-        "weekData": data,
+        "weekData": exerciseLogs,
     }
 
 

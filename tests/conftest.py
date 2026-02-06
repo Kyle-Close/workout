@@ -113,10 +113,10 @@ def seeded_db(test_db: TestDB) -> TestDB:
     conn.executemany(
         "INSERT INTO exercises (id, name, equipment_type, weight_increment) VALUES (?, ?, ?, ?)",
         [
-            (1, "Bench Press", "barbell", 5.0),
-            (2, "Squat", "barbell", 5.0),
-            (3, "Deadlift", "barbell", 5.0),
-            (4, "Assisted Pull-up", "cable", 5.0),
+            (1, "Bench Press", "BARBELL", 5.0),
+            (2, "Squat", "BARBELL", 5.0),
+            (3, "Deadlift", "BARBELL", 5.0),
+            (4, "Assisted Pull-up", "MACHINE", 5.0),
         ],
     )
 

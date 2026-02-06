@@ -1,8 +1,8 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class EquipmentType(Enum):
-    BARBELL = 1
-    DUMBBELL = 2
-    MACHINE = 3
-    BODYWEIGHT = 4
+class EquipmentType(StrEnum):
+    BARBELL = "BARBELL"
+    DUMBBELL = "DUMBBELL"
+    MACHINE = "MACHINE"
+    BODY_WEIGHT = "BODY WEIGHT"
