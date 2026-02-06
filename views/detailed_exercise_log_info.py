@@ -9,7 +9,7 @@ class DetailedExerciseLog(BaseModel):
     user_id: int
     workout_day_exercise_id: int
     program_week: int
-    weight: int
+    weight: float
     sets_completed: int | None
     reps_in_reserve: int | None
     notes: str | None

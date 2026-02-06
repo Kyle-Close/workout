@@ -10,7 +10,7 @@ class ExerciseEntryForDayView(BaseModel):
     exercise_name: str
     program_week: int
     workout_day: int
-    weight: int
+    weight: float
     target_sets: int
     target_reps: int
     sets_completed: int | None
@@ -19,3 +19,4 @@ class ExerciseEntryForDayView(BaseModel):
     workout_day_exercise_id: int
     completed: bool
     equipment_type: EquipmentType
+    weight_change: float | None

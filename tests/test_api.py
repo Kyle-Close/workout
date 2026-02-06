@@ -32,6 +32,19 @@ class TestGetCurrentWeekDataEndpoint:
         assert "Squat" in exercise_names
         assert "Deadlift" in exercise_names
 
+    def test_get_current_week_data_weight_change_null_for_week_1(self, client):
+        response = client.get(
+            "/get-current-week-data",
+            params={"user_id": 1, "workout_program_id": 1},
+        )
+
+        data = response.json()
+        week_data = data["weekData"]
+
+        # Week 1 has no previous week, so weight_change should be null
+        for entry in week_data:
+            assert entry["weight_change"] is None
+
     def test_get_current_week_data_no_logs(self, client, seeded_db_with_logs):
         # Clear logs to test empty state
         seeded_db_with_logs.connection.execute("DELETE FROM exercise_log")
@@ -51,6 +64,32 @@ class TestGetCurrentWeekDataEndpoint:
         response = client.get("/get-current-week-data")
 
         assert response.status_code == 422  # Validation error
+
+
+class TestWeightChange:
+    """Tests for weight_change field in get-current-week-data."""
+
+    def test_weight_change_with_previous_week(self, multi_week_client):
+        response = multi_week_client.get(
+            "/get-current-week-data",
+            params={"user_id": 1, "workout_program_id": 1},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        week_data = data["weekData"]
+
+        # Build a lookup by exercise name
+        by_name = {e["exercise_name"]: e for e in week_data}
+
+        # Bench Press: week2=155, week1=150 -> +5
+        assert by_name["Bench Press"]["weight_change"] == 5
+        # Squat: week2=240, week1=240 -> 0
+        assert by_name["Squat"]["weight_change"] == 0
+        # Deadlift: week2=335, week1=340 -> -5
+        assert by_name["Deadlift"]["weight_change"] == -5
+        # Assisted Pull-up: week2=145, week1=145 -> 0
+        assert by_name["Assisted Pull-up"]["weight_change"] == 0
 
 
 class TestGenerateLogsWeekEndpoint:

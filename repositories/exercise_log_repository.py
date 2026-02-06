@@ -14,7 +14,7 @@ class ExerciseLogRepository:
         self, user_id: int, program_id: int, week_num: int
     ) -> list[ExerciseEntryForDayView]:
         statement = """
-            SELECT        
+            SELECT
                 t1.id  AS exercise_log_id,
                 t3.name AS exercise_name,
                 t1.program_week,
@@ -27,10 +27,15 @@ class ExerciseLogRepository:
                 t2.optional,
                 t2.id AS workout_day_exercise_id,
                 t1.completed,
-                t3.equipment_type
+                t3.equipment_type,
+                (t1.weight - prev.weight) AS weight_change
             FROM exercise_log AS t1
             INNER JOIN workout_day_exercises AS t2 ON t1.workout_day_exercise_id = t2.id
             INNER JOIN exercises AS t3 ON t2.exercise_id = t3.id
+            LEFT JOIN exercise_log AS prev
+                ON prev.workout_day_exercise_id = t1.workout_day_exercise_id
+                AND prev.user_id = t1.user_id
+                AND prev.program_week = t1.program_week - 1
             WHERE t1.user_id = ? AND t2.workout_program_id = ? AND t1.program_week = ?
         """
         params = (user_id, program_id, week_num)
@@ -48,7 +53,7 @@ class ExerciseLogRepository:
         result = self.db.connection.execute(statement, params).fetchone()
         return result[0] if result is not None and result[0] is not None else 0
 
-    def create_exercise_log_entry(self, user_id: int, workout_day_exercise_id: int, program_week: int, weight: int):
+    def create_exercise_log_entry(self, user_id: int, workout_day_exercise_id: int, program_week: int, weight: float):
         statement = """
             INSERT INTO exercise_log (user_id, workout_day_exercise_id, program_week, weight)
             VALUES (?, ?, ?, ?)

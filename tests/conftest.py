@@ -75,7 +75,7 @@ def test_db_connection() -> Generator[sqlite3.Connection, None, None]:
             user_id INTEGER NOT NULL,
             workout_day_exercise_id INTEGER NOT NULL,
             program_week INTEGER NOT NULL,
-            weight INTEGER NOT NULL,
+            weight REAL NOT NULL,
             sets_completed INTEGER,
             reps_in_reserve INTEGER,
             notes TEXT,
@@ -171,6 +171,46 @@ def seeded_db_with_logs(seeded_db: TestDB) -> TestDB:
 
     conn.commit()
     return seeded_db
+
+
+@pytest.fixture
+def seeded_db_with_multi_week_logs(seeded_db_with_logs: TestDB) -> TestDB:
+    """Database with exercise logs for week 1 AND week 2 to test weight_change."""
+    conn = seeded_db_with_logs.connection
+
+    # Insert exercise logs for week 2 with different weights
+    conn.executemany(
+        """INSERT INTO exercise_log
+           (id, user_id, workout_day_exercise_id, program_week, weight, sets_completed, reps_in_reserve, completed)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        [
+            (5, 1, 1, 2, 155, 3, 2, 0),  # Bench Press - weight +5
+            (6, 1, 2, 2, 240, 3, 1, 0),  # Squat - weight same
+            (7, 1, 3, 2, 335, 3, 2, 0),  # Deadlift - weight -5
+            (8, 1, 4, 2, 145, None, None, 0),  # Assisted Pull-up - weight same
+        ],
+    )
+
+    conn.commit()
+    return seeded_db_with_logs
+
+
+@pytest.fixture
+def multi_week_client(seeded_db_with_multi_week_logs: TestDB) -> Generator[TestClient, None, None]:
+    """FastAPI test client with multi-week database."""
+
+    def override_get_db() -> Generator[TestDB, None, None]:
+        try:
+            yield seeded_db_with_multi_week_logs
+            seeded_db_with_multi_week_logs.connection.commit()
+        except sqlite3.Error:
+            seeded_db_with_multi_week_logs.connection.rollback()
+            raise
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

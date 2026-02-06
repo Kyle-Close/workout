@@ -27,10 +27,9 @@ class TestRoundToNearest:
         assert round_to_nearest(157.5, 5) == 160
 
     def test_round_to_nearest_2_5(self):
-        # Note: function returns int, so 152.5 becomes 152
-        # 152.5 / 2.5 = 61, 61 * 2.5 = 152.5, int(152.5) = 152
-        assert round_to_nearest(152.5, 2.5) == 152
-        # 155 / 2.5 = 62, 62 * 2.5 = 155, int(155) = 155
+        # 152.5 / 2.5 = 61, 61 * 2.5 = 152.5
+        assert round_to_nearest(152.5, 2.5) == 152.5
+        # 155 / 2.5 = 62, 62 * 2.5 = 155
         assert round_to_nearest(155, 2.5) == 155
 
     def test_round_to_nearest_1(self):
@@ -49,10 +48,9 @@ class TestRoundToNearest:
         assert round_to_nearest(-17.5, 5) == -20
 
     def test_round_to_nearest_small_unit(self):
-        # Note: function returns int, so fractional results are truncated
-        # 10.3 / 0.5 = 20.6, rounds to 21 * 0.5 = 10.5, int(10.5) = 10
-        assert round_to_nearest(10.3, 0.5) == 10
-        # 11 / 0.5 = 22, 22 * 0.5 = 11, int(11) = 11
+        # 10.3 / 0.5 = 20.6, rounds to 21 * 0.5 = 10.5
+        assert round_to_nearest(10.3, 0.5) == 10.5
+        # 11 / 0.5 = 22, 22 * 0.5 = 11
         assert round_to_nearest(11, 0.5) == 11
 
     @pytest.mark.parametrize(

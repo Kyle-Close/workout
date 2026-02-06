@@ -10,7 +10,7 @@ class PlateBreakdown:
     plates_2_5: int 
 
 class PlateCalculator:
-    def __init__(self, total_weight: int) -> None:
+    def __init__(self, total_weight: float) -> None:
         self.bar_weight = 45
         self.total_weight = total_weight
 

@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     user_id INTEGER NOT NULL,
     workout_day_exercise_id INTEGER NOT NULL,
     program_week INTEGER NOT NULL,
-    weight INTEGER NOT NULL,
+    weight REAL NOT NULL,
     sets_completed INTEGER,
     reps_in_reserve INTEGER,
     notes TEXT,
