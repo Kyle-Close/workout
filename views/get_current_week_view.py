@@ -7,6 +7,7 @@ from enums.equipment_type import EquipmentType
 class ExerciseEntryForDayView(BaseModel):
     model_config = ConfigDict(extra='allow')
     exercise_log_id: int
+    exercise_id: int
     exercise_name: str
     program_week: int
     workout_day: int

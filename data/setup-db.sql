@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     sets_completed INTEGER,
     reps_in_reserve INTEGER,
     notes TEXT,
-    completed BOOLEAN NOT NULL DEFAULT 0
+    completed BOOLEAN NOT NULL DEFAULT 0,
+    completed_at TEXT
 );
 
 -- INSERTS

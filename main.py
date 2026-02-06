@@ -104,6 +104,17 @@ def get_active_week(user_id: int, workout_program_id: int, week_num: int, db: DB
     return exercise_log_service.get_exercise_logs_by_week(user_id, workout_program_id, week_num)
 
 
+@app.get("/exercises/history")
+def get_exercise_history(user_id: int, exercise_id: int, db: DB = Depends(get_db)):
+    exercise_log_service = ExerciseLogService(db)
+    exercise_name, history = exercise_log_service.get_exercise_history(user_id, exercise_id)
+    return {
+        "exercise_id": exercise_id,
+        "exercise_name": exercise_name,
+        "history": history,
+    }
+
+
 @app.get("/programs")
 def get_programs(user_id: int, db: DB = Depends(get_db)):
     workout_service = WorkoutService(db)

@@ -1,5 +1,8 @@
+from datetime import date
+
 from db.db import DB
 from views.detailed_exercise_log_info import DetailedExerciseLog
+from views.exercise_history import ExerciseHistoryEntry
 from views.exercise_log import ExerciseLog
 from views.get_current_week_view import ExerciseEntryForDayView
 
@@ -16,6 +19,7 @@ class ExerciseLogRepository:
         statement = """
             SELECT
                 t1.id  AS exercise_log_id,
+                t3.id AS exercise_id,
                 t3.name AS exercise_name,
                 t1.program_week,
                 t2.workout_day,
@@ -63,7 +67,7 @@ class ExerciseLogRepository:
     def update_many_exercise_logs(self, exercise_logs: list[ExerciseLog]):
         statement = """
                 UPDATE exercise_log
-                SET program_week = ?, weight = ?, sets_completed = ?, reps_in_reserve = ?, notes = ?, completed = ?
+                SET program_week = ?, weight = ?, sets_completed = ?, reps_in_reserve = ?, notes = ?, completed = ?, completed_at = ?
                 WHERE id = ?
         """
         updates = [
@@ -74,6 +78,7 @@ class ExerciseLogRepository:
                 log.reps_in_reserve,
                 log.notes,
                 log.completed,
+                date.today().isoformat() if log.completed else None,
                 log.id,
             )
             for log in exercise_logs
@@ -127,3 +132,25 @@ class ExerciseLogRepository:
         params = (*log_ids,)
         rows = self.db.connection.execute(statement, params).fetchall()
         return [DetailedExerciseLog(**dict(row)) for row in rows]
+
+    def get_exercise_history(self, user_id: int, exercise_id: int) -> tuple[str | None, list[ExerciseHistoryEntry]]:
+        statement = """
+            SELECT
+                e.name AS exercise_name,
+                el.completed_at AS date,
+                el.weight,
+                el.sets_completed,
+                wde.target_sets,
+                el.reps_in_reserve
+            FROM exercise_log el
+            INNER JOIN workout_day_exercises wde ON el.workout_day_exercise_id = wde.id
+            INNER JOIN exercises e ON wde.exercise_id = e.id
+            WHERE el.user_id = ? AND wde.exercise_id = ? AND el.completed = 1 AND el.completed_at IS NOT NULL
+            ORDER BY el.completed_at ASC
+        """
+        rows = self.db.connection.execute(statement, (user_id, exercise_id)).fetchall()
+        if not rows:
+            return None, []
+        exercise_name = rows[0]["exercise_name"]
+        entries = [ExerciseHistoryEntry(**{k: row[k] for k in ("date", "weight", "sets_completed", "target_sets", "reps_in_reserve")}) for row in rows]
+        return exercise_name, entries

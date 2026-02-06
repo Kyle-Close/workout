@@ -18,3 +18,6 @@ class ExerciseLogService:
     def get_detailed_log_info(self, log_ids: list[int]):
         """Returns all the info we might need about a specific log. Using table joins to get the info"""
         return self.exercise_log_repository.get_detailed_log_info(log_ids)
+
+    def get_exercise_history(self, user_id: int, exercise_id: int):
+        return self.exercise_log_repository.get_exercise_history(user_id, exercise_id)
