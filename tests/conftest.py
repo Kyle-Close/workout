@@ -45,7 +45,9 @@ def test_db_connection() -> Generator[sqlite3.Connection, None, None]:
 
         CREATE TABLE workout_programs (
             id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         );
 
         CREATE TABLE workout_day_exercises (
@@ -121,7 +123,7 @@ def seeded_db(test_db: TestDB) -> TestDB:
     )
 
     # Insert workout program
-    conn.execute("INSERT INTO workout_programs (id, name) VALUES (1, 'Test Program')")
+    conn.execute("INSERT INTO workout_programs (id, user_id, name) VALUES (1, 1, 'Test Program')")
 
     # Insert workout day exercises
     conn.executemany(

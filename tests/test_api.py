@@ -269,3 +269,91 @@ class TestUpdateLogsEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["logs_updated"] == 2
+
+
+class TestGetPrograms:
+    """Integration tests for GET /programs."""
+
+    def test_get_programs_success(self, client):
+        response = client.get("/programs", params={"user_id": 1})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["id"] == 1
+        assert data[0]["name"] == "Test Program"
+
+    def test_get_programs_filters_by_user(self, client):
+        response = client.get("/programs", params={"user_id": 999})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data == []
+
+    def test_get_programs_missing_params(self, client):
+        response = client.get("/programs")
+
+        assert response.status_code == 422
+
+
+class TestGetProgramDetail:
+    """Integration tests for GET /programs/{program_id}."""
+
+    def test_get_program_detail_success(self, client):
+        response = client.get("/programs/1")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == 1
+        assert data["name"] == "Test Program"
+        assert len(data["days"]) == 2  # Day 1 and Day 2
+
+    def test_get_program_detail_day_grouping(self, client):
+        response = client.get("/programs/1")
+
+        data = response.json()
+        days = data["days"]
+
+        # Day 1: Bench Press and Squat
+        day1 = days[0]
+        assert day1["day"] == 1
+        assert len(day1["exercises"]) == 2
+        exercise_names = [e["exercise_name"] for e in day1["exercises"]]
+        assert "Bench Press" in exercise_names
+        assert "Squat" in exercise_names
+
+        # Day 2: Deadlift and Assisted Pull-up
+        day2 = days[1]
+        assert day2["day"] == 2
+        assert len(day2["exercises"]) == 2
+        exercise_names = [e["exercise_name"] for e in day2["exercises"]]
+        assert "Deadlift" in exercise_names
+        assert "Assisted Pull-up" in exercise_names
+
+    def test_get_program_detail_exercise_fields(self, client):
+        response = client.get("/programs/1")
+
+        data = response.json()
+        # Find the Bench Press exercise in Day 1
+        day1 = data["days"][0]
+        bench = next(e for e in day1["exercises"] if e["exercise_name"] == "Bench Press")
+
+        assert bench["target_sets"] == 3
+        assert bench["target_reps"] == 8
+        assert bench["intensity"] == 75.0
+        assert bench["optional"] is False
+        assert bench["equipment_type"] == "BARBELL"
+
+    def test_get_program_detail_optional_exercise(self, client):
+        response = client.get("/programs/1")
+
+        data = response.json()
+        day2 = data["days"][1]
+        pullup = next(e for e in day2["exercises"] if e["exercise_name"] == "Assisted Pull-up")
+
+        assert pullup["optional"] is True
+
+    def test_get_program_detail_not_found(self, client):
+        response = client.get("/programs/999")
+
+        assert response.status_code == 404

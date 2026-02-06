@@ -9,6 +9,8 @@ from repositories.one_rep_max_repository import OneRepMaxRepository
 from repositories.user_repository import UserRepository
 from repositories.workout_program_repository import WorkoutProgramRepository
 from views.exercise_log import ExerciseLog
+from views.program_detail import ProgramDayExercise, ProgramDay, ProgramDetail
+from views.program_summary import ProgramSummary
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,34 @@ class WorkoutService:
         self.workout_program_repository = WorkoutProgramRepository(db)
         self.one_rep_max_repository = OneRepMaxRepository(db)
         self.user_repository = UserRepository(db)
+
+    def get_user_programs(self, user_id: int) -> list[ProgramSummary]:
+        return self.workout_program_repository.get_user_programs(user_id)
+
+    def get_program_detail(self, program_id: int) -> ProgramDetail | None:
+        rows = self.workout_program_repository.get_program_detail(program_id)
+        if not rows:
+            return None
+
+        program_id_val = rows[0]["program_id"]
+        program_name = rows[0]["program_name"]
+
+        days_map: dict[int, list[ProgramDayExercise]] = {}
+        for row in rows:
+            day_num = row["workout_day"]
+            exercise = ProgramDayExercise(
+                exercise_name=row["exercise_name"],
+                target_sets=row["target_sets"],
+                target_reps=row["target_reps"],
+                intensity=row["intensity"],
+                optional=bool(row["optional"]),
+                equipment_type=row["equipment_type"],
+            )
+            days_map.setdefault(day_num, []).append(exercise)
+
+        days = [ProgramDay(day=day_num, exercises=exercises) for day_num, exercises in sorted(days_map.items())]
+
+        return ProgramDetail(id=program_id_val, name=program_name, days=days)
 
     def get_latest_program_week_entry(self, user_id: int, workout_program_id: int):
         return self.workout_program_repository.get_latest_program_week_entry(user_id, workout_program_id)

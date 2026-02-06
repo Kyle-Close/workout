@@ -1,4 +1,5 @@
 from db.db import DB
+from views.program_summary import ProgramSummary
 from views.workout_day_exercise import WorkoutDayExercise
 
 
@@ -47,6 +48,32 @@ class WorkoutProgramRepository:
         """
         rows = self.db.connection.execute(statement, (program_id,)).fetchall()
         return [WorkoutDayExercise(**dict(row)) for row in rows]
+
+    def get_user_programs(self, user_id: int) -> list[ProgramSummary]:
+        statement = "SELECT id, name FROM workout_programs WHERE user_id = ?"
+        rows = self.db.connection.execute(statement, (user_id,)).fetchall()
+        return [ProgramSummary(id=row["id"], name=row["name"]) for row in rows]
+
+    def get_program_detail(self, program_id: int) -> list[dict]:
+        statement = """
+            SELECT
+                t1.workout_day,
+                t3.name AS exercise_name,
+                t1.target_sets,
+                t1.target_reps,
+                t1.intensity,
+                t1.optional,
+                t3.equipment_type,
+                t2.id AS program_id,
+                t2.name AS program_name
+            FROM workout_day_exercises AS t1
+            INNER JOIN workout_programs AS t2 ON t1.workout_program_id = t2.id
+            INNER JOIN exercises AS t3 ON t1.exercise_id = t3.id
+            WHERE t1.workout_program_id = ?
+            ORDER BY t1.workout_day, t1.id
+        """
+        rows = self.db.connection.execute(statement, (program_id,)).fetchall()
+        return [dict(row) for row in rows]
 
     def get_number_of_days_in_program_week(self, program_id: int) -> int:
         statement = """

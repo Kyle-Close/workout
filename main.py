@@ -102,3 +102,18 @@ def get_active_week(user_id: int, workout_program_id: int, db: DB = Depends(get_
 def get_active_week(user_id: int, workout_program_id: int, week_num: int, db: DB = Depends(get_db)):
     exercise_log_service = ExerciseLogService(db)
     return exercise_log_service.get_exercise_logs_by_week(user_id, workout_program_id, week_num)
+
+
+@app.get("/programs")
+def get_programs(user_id: int, db: DB = Depends(get_db)):
+    workout_service = WorkoutService(db)
+    return workout_service.get_user_programs(user_id)
+
+
+@app.get("/programs/{program_id}")
+def get_program_detail(program_id: int, db: DB = Depends(get_db)):
+    workout_service = WorkoutService(db)
+    result = workout_service.get_program_detail(program_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Program not found")
+    return result
