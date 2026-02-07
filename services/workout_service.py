@@ -36,6 +36,9 @@ class WorkoutService:
     def get_user_programs(self, user_id: int) -> list[ProgramSummary]:
         return self.workout_program_repository.get_user_programs(user_id)
 
+    def update_program(self, program_id: int, name: str):
+        return self.workout_program_repository.update_program(program_id, name)
+
     def get_program_detail(self, program_id: int) -> ProgramDetail | None:
         rows = self.workout_program_repository.get_program_detail(program_id)
         if not rows:

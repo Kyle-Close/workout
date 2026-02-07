@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from db.db import DB, DatabaseConnectionError
 from helpers.plate_calculator import PlateCalculator
 from payloads.generate_logs_week import GenerateLogsWeekPayload
+from payloads.update_program import UpdateProgramPayload
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
 from services.workout_service import WorkoutService
@@ -128,3 +129,8 @@ def get_program_detail(program_id: int, db: DB = Depends(get_db)):
     if result is None:
         raise HTTPException(status_code=404, detail="Program not found")
     return result
+
+@app.patch("/programs/{program_id}")
+def update_program(program_id: int, payload: UpdateProgramPayload, db: DB = Depends(get_db)):
+    workout_service = WorkoutService(db)
+    return workout_service.update_program(program_id, payload.name)

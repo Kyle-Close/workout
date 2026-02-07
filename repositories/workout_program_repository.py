@@ -85,3 +85,14 @@ class WorkoutProgramRepository:
         params = (program_id,)
         result = self.db.connection.execute(statement, params).fetchone()
         return result[0] if result is not None and result[0] is not None else 0
+
+    def update_program(self, program_id: int, name: str):
+        statement = """
+            UPDATE workout_programs
+            SET name = ?
+            WHERE id = ?
+        """
+
+        cursor = self.db.connection.execute(statement, (name, program_id))
+        self.db.connection.commit()
+        return cursor.rowcount
