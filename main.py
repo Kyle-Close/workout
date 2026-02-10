@@ -156,6 +156,11 @@ def create_program(payload: CreateProgramPayload, db: DB = Depends(get_db)):
         payload.user_id, payload.name, [e.model_dump() for e in payload.exercises]
     )
 
+@app.delete("/programs/{program_id}", status_code=204)
+def delete_program(program_id: int, user_id: int, db: DB = Depends(get_db)):
+    workout_service = WorkoutService(db)
+    workout_service.delete_program(program_id, user_id)
+
 @app.patch("/programs/{program_id}")
 def update_program(program_id: int, payload: UpdateProgramPayload, db: DB = Depends(get_db)):
     workout_service = WorkoutService(db)

@@ -39,6 +39,14 @@ class WorkoutService:
     def update_program(self, program_id: int, name: str):
         return self.workout_program_repository.update_program(program_id, name)
 
+    def delete_program(self, program_id: int, user_id: int) -> None:
+        owner = self.workout_program_repository.get_program_owner(program_id)
+        if owner is None:
+            raise HTTPException(status_code=404, detail="Program not found")
+        if owner != user_id:
+            raise HTTPException(status_code=403, detail="You do not own this program")
+        self.workout_program_repository.delete_program(program_id)
+
     def create_program(self, user_id: int, name: str, exercises: list[dict]) -> ProgramDetail:
         program_id = self.workout_program_repository.create_program(user_id, name)
         self.workout_program_repository.create_workout_day_exercises(program_id, exercises)

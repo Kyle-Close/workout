@@ -97,6 +97,28 @@ class WorkoutProgramRepository:
         self.db.connection.commit()
         return cursor.rowcount
 
+    def get_program_owner(self, program_id: int) -> int | None:
+        row = self.db.connection.execute(
+            "SELECT user_id FROM workout_programs WHERE id = ?", (program_id,)
+        ).fetchone()
+        return row["user_id"] if row else None
+
+    def delete_program(self, program_id: int) -> None:
+        self.db.connection.execute(
+            """DELETE FROM exercise_log WHERE workout_day_exercise_id IN (
+                SELECT id FROM workout_day_exercises WHERE workout_program_id = ?
+            )""",
+            (program_id,),
+        )
+        self.db.connection.execute(
+            "DELETE FROM workout_day_exercises WHERE workout_program_id = ?",
+            (program_id,),
+        )
+        self.db.connection.execute(
+            "DELETE FROM workout_programs WHERE id = ?",
+            (program_id,),
+        )
+
     def create_program(self, user_id: int, name: str) -> int:
         statement = "INSERT INTO workout_programs (user_id, name) VALUES (?, ?)"
         cursor = self.db.connection.execute(statement, (user_id, name))

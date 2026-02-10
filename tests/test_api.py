@@ -552,3 +552,38 @@ class TestCreateProgram:
         exercises_by_name = {e["exercise_name"]: e for e in day1["exercises"]}
         assert exercises_by_name["Bench Press"]["optional"] is False
         assert exercises_by_name["Assisted Pull-up"]["optional"] is True
+
+
+class TestDeleteProgram:
+    """Integration tests for DELETE /programs/{program_id}."""
+
+    def test_delete_program_success(self, client, seeded_db_with_logs):
+        response = client.delete("/programs/1", params={"user_id": 1})
+
+        assert response.status_code == 204
+
+        # Program is gone
+        assert client.get("/programs/1").status_code == 404
+
+        # Exercise logs for this program are gone
+        count = seeded_db_with_logs.connection.execute(
+            "SELECT COUNT(*) FROM exercise_log"
+        ).fetchone()[0]
+        assert count == 0
+
+        # Workout day exercises are gone
+        count = seeded_db_with_logs.connection.execute(
+            "SELECT COUNT(*) FROM workout_day_exercises"
+        ).fetchone()[0]
+        assert count == 0
+
+    def test_delete_program_not_found(self, client):
+        response = client.delete("/programs/999", params={"user_id": 1})
+
+        assert response.status_code == 404
+
+    def test_delete_program_wrong_user(self, client):
+        response = client.delete("/programs/1", params={"user_id": 999})
+
+        assert response.status_code == 403
+        assert "do not own" in response.json()["detail"]
