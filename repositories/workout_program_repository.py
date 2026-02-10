@@ -96,3 +96,21 @@ class WorkoutProgramRepository:
         cursor = self.db.connection.execute(statement, (name, program_id))
         self.db.connection.commit()
         return cursor.rowcount
+
+    def create_program(self, user_id: int, name: str) -> int:
+        statement = "INSERT INTO workout_programs (user_id, name) VALUES (?, ?)"
+        cursor = self.db.connection.execute(statement, (user_id, name))
+        return cursor.lastrowid
+
+    def create_workout_day_exercises(self, program_id: int, exercises: list[dict]) -> None:
+        statement = """
+            INSERT INTO workout_day_exercises
+            (workout_program_id, exercise_id, workout_day, target_sets, target_reps, intensity, optional)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        rows = [
+            (program_id, e["exercise_id"], e["workout_day"], e["target_sets"],
+             e["target_reps"], e["intensity"], int(e["optional"]))
+            for e in exercises
+        ]
+        self.db.connection.executemany(statement, rows)

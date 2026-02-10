@@ -357,3 +357,119 @@ class TestGetProgramDetail:
         response = client.get("/programs/999")
 
         assert response.status_code == 404
+
+
+class TestCreateProgram:
+    """Integration tests for POST /programs."""
+
+    def test_create_program_success(self, client):
+        response = client.post(
+            "/programs",
+            json={
+                "user_id": 1,
+                "name": "New Program",
+                "exercises": [
+                    {
+                        "exercise_id": 1,
+                        "workout_day": 1,
+                        "target_sets": 3,
+                        "target_reps": 5,
+                        "intensity": 82.5,
+                    },
+                    {
+                        "exercise_id": 2,
+                        "workout_day": 1,
+                        "target_sets": 4,
+                        "target_reps": 8,
+                        "intensity": 70.0,
+                        "optional": True,
+                    },
+                    {
+                        "exercise_id": 3,
+                        "workout_day": 2,
+                        "target_sets": 3,
+                        "target_reps": 3,
+                        "intensity": 90.0,
+                    },
+                ],
+            },
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "New Program"
+        assert len(data["days"]) == 2
+
+    def test_create_program_response_matches_program_detail_structure(self, client):
+        response = client.post(
+            "/programs",
+            json={
+                "user_id": 1,
+                "name": "Structured Program",
+                "exercises": [
+                    {
+                        "exercise_id": 1,
+                        "workout_day": 1,
+                        "target_sets": 3,
+                        "target_reps": 5,
+                        "intensity": 82.5,
+                    },
+                ],
+            },
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+
+        # Verify ProgramDetail structure
+        assert "id" in data
+        assert "name" in data
+        assert "days" in data
+
+        day = data["days"][0]
+        assert "day" in day
+        assert "exercises" in day
+
+        exercise = day["exercises"][0]
+        assert exercise["exercise_name"] == "Bench Press"
+        assert exercise["target_sets"] == 3
+        assert exercise["target_reps"] == 5
+        assert exercise["intensity"] == 82.5
+        assert exercise["optional"] is False
+        assert "equipment_type" in exercise
+
+    def test_create_program_with_optional_and_mandatory(self, client):
+        response = client.post(
+            "/programs",
+            json={
+                "user_id": 1,
+                "name": "Mixed Program",
+                "exercises": [
+                    {
+                        "exercise_id": 1,
+                        "workout_day": 1,
+                        "target_sets": 3,
+                        "target_reps": 5,
+                        "intensity": 80.0,
+                        "optional": False,
+                    },
+                    {
+                        "exercise_id": 4,
+                        "workout_day": 1,
+                        "target_sets": 3,
+                        "target_reps": 10,
+                        "intensity": 65.0,
+                        "optional": True,
+                    },
+                ],
+            },
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        day1 = data["days"][0]
+        assert len(day1["exercises"]) == 2
+
+        exercises_by_name = {e["exercise_name"]: e for e in day1["exercises"]}
+        assert exercises_by_name["Bench Press"]["optional"] is False
+        assert exercises_by_name["Assisted Pull-up"]["optional"] is True
