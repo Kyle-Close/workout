@@ -7,9 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.db import DB, DatabaseConnectionError
 from helpers.plate_calculator import PlateCalculator
+from payloads.create_exercise import CreateExercisePayload
 from payloads.create_program import CreateProgramPayload
 from payloads.generate_logs_week import GenerateLogsWeekPayload
 from payloads.update_program import UpdateProgramPayload
+from repositories.exercise_repository import ExerciseRepository
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
 from services.workout_service import WorkoutService
@@ -115,6 +117,22 @@ def get_exercise_history(user_id: int, exercise_id: int, db: DB = Depends(get_db
         "exercise_name": exercise_name,
         "history": history,
     }
+
+
+@app.get("/exercises")
+def get_exercises(db: DB = Depends(get_db)):
+    exercise_repo = ExerciseRepository(db)
+    return exercise_repo.get_all()
+
+
+@app.post("/exercises", status_code=201)
+def create_exercise(payload: CreateExercisePayload, db: DB = Depends(get_db)):
+    exercise_repo = ExerciseRepository(db)
+    existing = exercise_repo.find_by_name(payload.name)
+    if existing:
+        raise HTTPException(status_code=409, detail="Exercise with this name already exists")
+    exercise_id = exercise_repo.create_exercise(payload.name, payload.equipment_type, payload.weight_increment)
+    return {"id": exercise_id, "name": payload.name, "equipment_type": payload.equipment_type, "weight_increment": payload.weight_increment}
 
 
 @app.get("/programs")

@@ -359,6 +359,85 @@ class TestGetProgramDetail:
         assert response.status_code == 404
 
 
+class TestGetExercises:
+    """Integration tests for GET /exercises."""
+
+    def test_get_exercises_returns_all(self, client):
+        response = client.get("/exercises")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 4
+        names = [e["name"] for e in data]
+        assert "Bench Press" in names
+        assert "Squat" in names
+        assert "Deadlift" in names
+        assert "Assisted Pull-up" in names
+
+    def test_get_exercises_fields(self, client):
+        response = client.get("/exercises")
+
+        data = response.json()
+        exercise = data[0]
+        assert "id" in exercise
+        assert "name" in exercise
+        assert "equipment_type" in exercise
+        assert "weight_increment" in exercise
+
+    def test_get_exercises_ordered_by_name(self, client):
+        response = client.get("/exercises")
+
+        data = response.json()
+        names = [e["name"] for e in data]
+        assert names == sorted(names)
+
+
+class TestCreateExercise:
+    """Integration tests for POST /exercises."""
+
+    def test_create_exercise_success(self, client):
+        response = client.post(
+            "/exercises",
+            json={
+                "name": "Overhead Press",
+                "equipment_type": "BARBELL",
+                "weight_increment": 5.0,
+            },
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "Overhead Press"
+        assert data["equipment_type"] == "BARBELL"
+        assert data["weight_increment"] == 5.0
+        assert "id" in data
+
+    def test_create_exercise_duplicate_name_returns_409(self, client):
+        response = client.post(
+            "/exercises",
+            json={
+                "name": "Bench Press",
+                "equipment_type": "BARBELL",
+                "weight_increment": 5.0,
+            },
+        )
+
+        assert response.status_code == 409
+        assert "already exists" in response.json()["detail"]
+
+    def test_create_exercise_invalid_equipment_type(self, client):
+        response = client.post(
+            "/exercises",
+            json={
+                "name": "Some Exercise",
+                "equipment_type": "INVALID",
+                "weight_increment": 5.0,
+            },
+        )
+
+        assert response.status_code == 422
+
+
 class TestCreateProgram:
     """Integration tests for POST /programs."""
 
