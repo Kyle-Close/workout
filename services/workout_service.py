@@ -94,6 +94,7 @@ class WorkoutService:
         for row in rows:
             day_num = row["workout_day"]
             exercise = ProgramDayExercise(
+                id=row["id"],
                 exercise_name=row["exercise_name"],
                 target_sets=row["target_sets"],
                 target_reps=row["target_reps"],
@@ -106,6 +107,10 @@ class WorkoutService:
         days = [ProgramDay(day=day_num, exercises=exercises) for day_num, exercises in sorted(days_map.items())]
 
         return ProgramDetail(id=program_id_val, name=program_name, days=days)
+
+    def update_program_exercises(self, program_id: int, exercises: list[dict]) -> ProgramDetail:
+        self.workout_program_repository.update_workout_day_exercises(program_id, exercises)
+        return self.get_program_detail(program_id)
 
     def get_latest_program_week_entry(self, user_id: int, workout_program_id: int):
         return self.workout_program_repository.get_latest_program_week_entry(user_id, workout_program_id)

@@ -57,6 +57,7 @@ class WorkoutProgramRepository:
     def get_program_detail(self, program_id: int) -> list[dict]:
         statement = """
             SELECT
+                t1.id,
                 t1.workout_day,
                 t3.name AS exercise_name,
                 t1.target_sets,
@@ -123,6 +124,18 @@ class WorkoutProgramRepository:
         statement = "INSERT INTO workout_programs (user_id, name) VALUES (?, ?)"
         cursor = self.db.connection.execute(statement, (user_id, name))
         return cursor.lastrowid
+
+    def update_workout_day_exercises(self, program_id: int, exercises: list[dict]) -> None:
+        statement = """
+            UPDATE workout_day_exercises
+            SET target_sets = ?, target_reps = ?, intensity = ?
+            WHERE id = ? AND workout_program_id = ?
+        """
+        rows = [
+            (e["target_sets"], e["target_reps"], e["intensity"], e["id"], program_id)
+            for e in exercises
+        ]
+        self.db.connection.executemany(statement, rows)
 
     def create_workout_day_exercises(self, program_id: int, exercises: list[dict]) -> None:
         statement = """

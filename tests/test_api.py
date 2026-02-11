@@ -589,6 +589,68 @@ class TestDeleteProgram:
         assert "do not own" in response.json()["detail"]
 
 
+class TestUpdateProgramExercises:
+    """Integration tests for PATCH /programs/{program_id}/exercises."""
+
+    def test_update_program_exercises_success(self, client):
+        response = client.patch(
+            "/programs/1/exercises",
+            json={
+                "exercises": [
+                    {"id": 1, "target_sets": 5, "target_reps": 5, "intensity": 80.0},
+                    {"id": 2, "target_sets": 4, "target_reps": 6, "intensity": 77.5},
+                ]
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == 1
+        assert data["name"] == "Test Program"
+
+        day1 = data["days"][0]
+        exercises_by_id = {e["id"]: e for e in day1["exercises"]}
+
+        assert exercises_by_id[1]["target_sets"] == 5
+        assert exercises_by_id[1]["target_reps"] == 5
+        assert exercises_by_id[1]["intensity"] == 80.0
+
+        assert exercises_by_id[2]["target_sets"] == 4
+        assert exercises_by_id[2]["target_reps"] == 6
+        assert exercises_by_id[2]["intensity"] == 77.5
+
+    def test_update_program_exercises_does_not_affect_other_fields(self, client):
+        response = client.patch(
+            "/programs/1/exercises",
+            json={
+                "exercises": [
+                    {"id": 1, "target_sets": 5, "target_reps": 5, "intensity": 80.0},
+                ]
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        day1 = data["days"][0]
+        bench = next(e for e in day1["exercises"] if e["id"] == 1)
+
+        assert bench["exercise_name"] == "Bench Press"
+        assert bench["optional"] is False
+        assert bench["equipment_type"] == "BARBELL"
+
+    def test_update_program_exercises_not_found(self, client):
+        response = client.patch(
+            "/programs/999/exercises",
+            json={
+                "exercises": [
+                    {"id": 1, "target_sets": 5, "target_reps": 5, "intensity": 80.0},
+                ]
+            },
+        )
+
+        assert response.status_code == 404
+
+
 class TestCreateRecommendedProgram:
     """Integration tests for POST /programs/recommended."""
 
