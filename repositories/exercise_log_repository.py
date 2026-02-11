@@ -31,6 +31,7 @@ class ExerciseLogRepository:
                 t2.optional,
                 t2.id AS workout_day_exercise_id,
                 t1.completed,
+                t1.notes,
                 t3.equipment_type,
                 (t1.weight - prev.weight) AS weight_change
             FROM exercise_log AS t1

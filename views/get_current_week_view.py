@@ -19,5 +19,6 @@ class ExerciseEntryForDayView(BaseModel):
     optional: bool
     workout_day_exercise_id: int
     completed: bool
+    notes: str | None
     equipment_type: EquipmentType
     weight_change: float | None
