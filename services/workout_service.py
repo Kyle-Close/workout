@@ -73,9 +73,7 @@ class WorkoutService:
             for e in template
         ]
 
-        return self.create_program(
-            user_id, "Stronger by Science Linear Progression - 5 Day Variant", exercises
-        )
+        return self.create_program(user_id, "Stronger by Science Linear Progression", exercises)
 
     def create_program(self, user_id: int, name: str, exercises: list[dict]) -> ProgramDetail:
         program_id = self.workout_program_repository.create_program(user_id, name)
@@ -95,6 +93,7 @@ class WorkoutService:
             day_num = row["workout_day"]
             exercise = ProgramDayExercise(
                 id=row["id"],
+                exercise_id=row["exercise_id"],
                 exercise_name=row["exercise_name"],
                 target_sets=row["target_sets"],
                 target_reps=row["target_reps"],
@@ -134,9 +133,10 @@ class WorkoutService:
             )
 
             if exercise_data is None:
-                raise ValueError(
-                    f"Could not find exercise data for workout day entry (exercise_id={entry.exercise_id})"
+                logger.warning(
+                    f"Skipping log generation for exercise_id={entry.exercise_id}: no one rep max data found"
                 )
+                continue
 
             one_rep_max = exercise_data.current_one_rep_max
             weight_increment = exercise_data.weight_increment
@@ -207,33 +207,18 @@ _SBS_TEMPLATE = [
     _exercise("Squat", 1, 3, 3, 87.5),
     _exercise("Incline Bench Press", 1, 3, 8, 75),
     _exercise("T-Bar Rows", 1, 3, 8, 75),
-    _exercise("Bulgarian Split Squat", 1, 3, 8, 75, optional=True),
-    _exercise("Seated Machine Row", 1, 3, 10, 75, optional=True),
-    _exercise("Hanging Leg Raises", 1, 3, 12, 100, optional=True),
     # Day 2
     _exercise("Bench Press", 2, 3, 3, 87.5),
     _exercise("Squat (2)", 2, 3, 5, 82.5),
-    _exercise("Seated Leg Curl", 2, 3, 12, 75, optional=True),
-    _exercise("Reverse Pec Deck", 2, 3, 15, 70, optional=True),
-    _exercise("Cable Tricep Pushdown", 2, 3, 12, 72.5, optional=True),
     # Day 3
     _exercise("Deadlift", 3, 3, 3, 87.5),
     _exercise("DB Bench Press", 3, 3, 5, 82.5),
     _exercise("Assisted Pull-Ups", 3, 3, 8, 75),
-    _exercise("Seated Cable Row", 3, 3, 10, 75, optional=True),
-    _exercise("Face Pulls", 3, 3, 15, 70, optional=True),
-    _exercise("Hammer Curls", 3, 3, 12, 70, optional=True),
     # Day 4
     _exercise("Overhead Press", 4, 3, 3, 87.5),
     _exercise("Leg Press", 4, 3, 8, 75),
-    _exercise("Lateral Raises", 4, 3, 15, 70, optional=True),
-    _exercise("Calf Raises", 4, 4, 12, 75, optional=True),
-    _exercise("Plank", 4, 3, 60, 100, optional=True),
     # Day 5
     _exercise("Close Grip Bench Press", 5, 3, 8, 75),
     _exercise("Romanian Deadlift", 5, 3, 8, 75),
     _exercise("Lat Pull-Downs", 5, 3, 8, 75),
-    _exercise("Hip Thrusts", 5, 3, 10, 75, optional=True),
-    _exercise("Neutral-Grip Pulldown", 5, 3, 10, 75, optional=True),
-    _exercise("DB Curls", 5, 3, 12, 70, optional=True),
 ]

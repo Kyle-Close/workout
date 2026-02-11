@@ -19,11 +19,13 @@ from payloads.create_exercise import CreateExercisePayload
 from payloads.create_program import CreateProgramPayload
 from payloads.create_user_weight import CreateUserWeightPayload
 from payloads.generate_logs_week import GenerateLogsWeekPayload
+from payloads.set_one_rep_max import SetOneRepMaxPayload
 from payloads.login import LoginPayload
 from payloads.register import RegisterPayload
 from payloads.update_program import UpdateProgramPayload
 from payloads.update_program_exercises import UpdateProgramExercisesPayload
 from repositories.exercise_repository import ExerciseRepository
+from repositories.one_rep_max_repository import OneRepMaxRepository
 from repositories.user_repository import UserRepository
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
@@ -152,6 +154,19 @@ def get_one_rep_maxes(
     db: DB = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    one_rep_max_service = OneRepMaxService(db)
+    return one_rep_max_service.user_one_rep_max_data(current_user.user_id)
+
+
+@app.put("/one-rep-maxes")
+def set_one_rep_maxes(
+    payload: SetOneRepMaxPayload,
+    db: DB = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    one_rep_max_repo = OneRepMaxRepository(db)
+    for entry in payload.maxes:
+        one_rep_max_repo.upsert_one_rep_max(current_user.user_id, entry.exercise_id, entry.one_rep_max)
     one_rep_max_service = OneRepMaxService(db)
     return one_rep_max_service.user_one_rep_max_data(current_user.user_id)
 

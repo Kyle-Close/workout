@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ProgramDayExercise(BaseModel):
     id: int
+    exercise_id: int
     exercise_name: str
     target_sets: int
     target_reps: int

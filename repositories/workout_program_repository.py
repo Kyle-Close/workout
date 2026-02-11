@@ -58,6 +58,7 @@ class WorkoutProgramRepository:
         statement = """
             SELECT
                 t1.id,
+                t1.exercise_id,
                 t1.workout_day,
                 t3.name AS exercise_name,
                 t1.target_sets,

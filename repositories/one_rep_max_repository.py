@@ -31,6 +31,23 @@ class OneRepMaxRepository:
         rows = self.db.connection.execute(statement, (user_id,)).fetchall()
         return [UserOneRepMaxWithExercise(**dict(row)) for row in rows]
 
+    def upsert_one_rep_max(self, user_id: int, exercise_id: int, one_rep_max: float):
+        existing = self.db.connection.execute(
+            "SELECT id FROM user_one_rep_maxes WHERE user_id = ? AND exercise_id = ?",
+            (user_id, exercise_id),
+        ).fetchone()
+
+        if existing:
+            self.db.connection.execute(
+                "UPDATE user_one_rep_maxes SET current_one_rep_max = ? WHERE user_id = ? AND exercise_id = ?",
+                (one_rep_max, user_id, exercise_id),
+            )
+        else:
+            self.db.connection.execute(
+                "INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (?, ?, ?, ?)",
+                (user_id, exercise_id, one_rep_max, one_rep_max),
+            )
+
     def update_one_rep_max(self, user_id: int, exercise_id, max: float):
         statement = """
             UPDATE user_one_rep_maxes
