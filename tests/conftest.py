@@ -4,6 +4,7 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
+from auth.auth import create_access_token, hash_password
 from db.db import DB
 from main import app, get_db
 
@@ -25,7 +26,9 @@ def test_db_connection() -> Generator[sqlite3.Connection, None, None]:
     connection.executescript("""
         CREATE TABLE users (
             id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user'
         );
 
         CREATE TABLE user_weight (
@@ -67,7 +70,8 @@ def test_db_connection() -> Generator[sqlite3.Connection, None, None]:
             id INTEGER PRIMARY KEY,
             user_id INTEGER NOT NULL,
             exercise_id INTEGER NOT NULL,
-            one_rep_max REAL NOT NULL,
+            original_one_rep_max REAL NOT NULL,
+            current_one_rep_max REAL NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (exercise_id) REFERENCES exercises(id)
         );
@@ -82,6 +86,7 @@ def test_db_connection() -> Generator[sqlite3.Connection, None, None]:
             reps_in_reserve INTEGER,
             notes TEXT,
             completed INTEGER NOT NULL DEFAULT 0,
+            completed_at TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (workout_day_exercise_id) REFERENCES workout_day_exercises(id)
         );
@@ -104,7 +109,10 @@ def seeded_db(test_db: TestDB) -> TestDB:
     conn = test_db.connection
 
     # Insert users
-    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Test User')")
+    conn.execute(
+        "INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)",
+        (1, "testuser", hash_password("testpass"), "user"),
+    )
 
     # Insert user weight
     conn.execute(
@@ -140,12 +148,12 @@ def seeded_db(test_db: TestDB) -> TestDB:
 
     # Insert user one rep maxes
     conn.executemany(
-        "INSERT INTO user_one_rep_maxes (user_id, exercise_id, one_rep_max) VALUES (?, ?, ?)",
+        "INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (?, ?, ?, ?)",
         [
-            (1, 1, 200.0),  # Bench Press
-            (1, 2, 300.0),  # Squat
-            (1, 3, 400.0),  # Deadlift
-            (1, 4, 50.0),  # Assisted Pull-up (assistance weight)
+            (1, 1, 200.0, 200.0),  # Bench Press
+            (1, 2, 300.0, 300.0),  # Squat
+            (1, 3, 400.0, 400.0),  # Deadlift
+            (1, 4, 50.0, 50.0),  # Assisted Pull-up (assistance weight)
         ],
     )
 
@@ -220,7 +228,10 @@ def full_exercise_db(test_db: TestDB) -> TestDB:
     """Database with all exercises matching the production seed, plus a user."""
     conn = test_db.connection
 
-    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Test User')")
+    conn.execute(
+        "INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)",
+        (1, "testuser", hash_password("testpass"), "user"),
+    )
 
     conn.executemany(
         "INSERT INTO exercises (id, name, equipment_type, weight_increment) VALUES (?, ?, ?, ?)",
@@ -294,3 +305,17 @@ def client(seeded_db_with_logs: TestDB) -> Generator[TestClient, None, None]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def auth_headers() -> dict[str, str]:
+    """Authorization headers with a user-role token for user_id=1."""
+    token = create_access_token(1, "testuser", "user")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_auth_headers() -> dict[str, str]:
+    """Authorization headers with an admin-role token for user_id=1."""
+    token = create_access_token(1, "testuser", "admin")
+    return {"Authorization": f"Bearer {token}"}

@@ -1,13 +1,85 @@
 import pytest
 
 
+class TestAuth:
+    """Integration tests for auth endpoints."""
+
+    def test_register_success(self, client):
+        response = client.post(
+            "/register",
+            json={"username": "newuser", "password": "newpass"},
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_register_duplicate_username(self, client):
+        response = client.post(
+            "/register",
+            json={"username": "testuser", "password": "whatever"},
+        )
+
+        assert response.status_code == 409
+        assert "already taken" in response.json()["detail"]
+
+    def test_login_success(self, client):
+        response = client.post(
+            "/login",
+            json={"username": "testuser", "password": "testpass"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_login_invalid_credentials(self, client):
+        response = client.post(
+            "/login",
+            json={"username": "testuser", "password": "wrongpass"},
+        )
+
+        assert response.status_code == 401
+        assert "Invalid credentials" in response.json()["detail"]
+
+    def test_login_nonexistent_user(self, client):
+        response = client.post(
+            "/login",
+            json={"username": "noone", "password": "pass"},
+        )
+
+        assert response.status_code == 401
+
+    def test_protected_endpoint_without_token(self, client):
+        response = client.get("/exercises")
+
+        assert response.status_code in (401, 403)
+
+    def test_non_admin_on_admin_endpoint(self, client, auth_headers):
+        response = client.post(
+            "/exercises",
+            json={
+                "name": "New Exercise",
+                "equipment_type": "BARBELL",
+                "weight_increment": 5.0,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 403
+        assert "Admin access required" in response.json()["detail"]
+
+
 class TestGetCurrentWeekDataEndpoint:
     """Integration tests for GET /get-current-week-data."""
 
-    def test_get_current_week_data_success(self, client):
+    def test_get_current_week_data_success(self, client, auth_headers):
         response = client.get(
             "/get-current-week-data",
-            params={"user_id": 1, "workout_program_id": 1},
+            params={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -17,10 +89,11 @@ class TestGetCurrentWeekDataEndpoint:
         assert data["currentDayOfWeek"] == 2  # Day 2 has incomplete mandatory
         assert len(data["weekData"]) == 4
 
-    def test_get_current_week_data_exercise_details(self, client):
+    def test_get_current_week_data_exercise_details(self, client, auth_headers):
         response = client.get(
             "/get-current-week-data",
-            params={"user_id": 1, "workout_program_id": 1},
+            params={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         data = response.json()
@@ -32,10 +105,11 @@ class TestGetCurrentWeekDataEndpoint:
         assert "Squat" in exercise_names
         assert "Deadlift" in exercise_names
 
-    def test_get_current_week_data_weight_change_null_for_week_1(self, client):
+    def test_get_current_week_data_weight_change_null_for_week_1(self, client, auth_headers):
         response = client.get(
             "/get-current-week-data",
-            params={"user_id": 1, "workout_program_id": 1},
+            params={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         data = response.json()
@@ -45,14 +119,15 @@ class TestGetCurrentWeekDataEndpoint:
         for entry in week_data:
             assert entry["weight_change"] is None
 
-    def test_get_current_week_data_no_logs(self, client, seeded_db_with_logs):
+    def test_get_current_week_data_no_logs(self, client, seeded_db_with_logs, auth_headers):
         # Clear logs to test empty state
         seeded_db_with_logs.connection.execute("DELETE FROM exercise_log")
         seeded_db_with_logs.connection.commit()
 
         response = client.get(
             "/get-current-week-data",
-            params={"user_id": 1, "workout_program_id": 1},
+            params={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -60,8 +135,8 @@ class TestGetCurrentWeekDataEndpoint:
         assert data["currentDayOfWeek"] == 0
         assert data["weekData"] == []
 
-    def test_get_current_week_data_missing_params(self, client):
-        response = client.get("/get-current-week-data")
+    def test_get_current_week_data_missing_params(self, client, auth_headers):
+        response = client.get("/get-current-week-data", headers=auth_headers)
 
         assert response.status_code == 422  # Validation error
 
@@ -69,10 +144,11 @@ class TestGetCurrentWeekDataEndpoint:
 class TestWeightChange:
     """Tests for weight_change field in get-current-week-data."""
 
-    def test_weight_change_with_previous_week(self, multi_week_client):
+    def test_weight_change_with_previous_week(self, multi_week_client, auth_headers):
         response = multi_week_client.get(
             "/get-current-week-data",
-            params={"user_id": 1, "workout_program_id": 1},
+            params={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -95,7 +171,7 @@ class TestWeightChange:
 class TestGenerateLogsWeekEndpoint:
     """Integration tests for POST /generate-logs-week."""
 
-    def test_generate_logs_week_success(self, client, seeded_db_with_logs):
+    def test_generate_logs_week_success(self, client, seeded_db_with_logs, auth_headers):
         # Complete all mandatory exercises first so we can generate a new week
         seeded_db_with_logs.connection.execute(
             "UPDATE exercise_log SET completed = 1"
@@ -104,7 +180,8 @@ class TestGenerateLogsWeekEndpoint:
 
         response = client.post(
             "/generate-logs-week",
-            json={"user_id": 1, "workout_program_id": 1},
+            json={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -116,7 +193,7 @@ class TestGenerateLogsWeekEndpoint:
         weeks = [log[0] for log in logs]
         assert 2 in weeks
 
-    def test_generate_logs_week_creates_correct_exercises(self, client, seeded_db_with_logs):
+    def test_generate_logs_week_creates_correct_exercises(self, client, seeded_db_with_logs, auth_headers):
         seeded_db_with_logs.connection.execute(
             "UPDATE exercise_log SET completed = 1"
         )
@@ -124,7 +201,8 @@ class TestGenerateLogsWeekEndpoint:
 
         response = client.post(
             "/generate-logs-week",
-            json={"user_id": 1, "workout_program_id": 1},
+            json={"workout_program_id": 1},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -135,8 +213,8 @@ class TestGenerateLogsWeekEndpoint:
         ).fetchone()[0]
         assert count == 4  # 4 exercises in the program
 
-    def test_generate_logs_week_missing_params(self, client):
-        response = client.post("/generate-logs-week", json={})
+    def test_generate_logs_week_missing_params(self, client, auth_headers):
+        response = client.post("/generate-logs-week", json={}, headers=auth_headers)
 
         assert response.status_code == 422
 
@@ -144,13 +222,12 @@ class TestGenerateLogsWeekEndpoint:
 class TestUpdateLogsEndpoint:
     """Integration tests for PATCH /update-logs."""
 
-    def test_update_logs_success(self, client, seeded_db_with_logs):
+    def test_update_logs_success(self, client, seeded_db_with_logs, auth_headers):
         response = client.patch(
             "/update-logs",
             json=[
                 {
                     "id": 3,
-                    "user_id": 1,
                     "workout_day_exercise_id": 3,
                     "program_week": 1,
                     "weight": 340,
@@ -160,6 +237,7 @@ class TestUpdateLogsEndpoint:
                     "completed": True,
                 }
             ],
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -168,14 +246,13 @@ class TestUpdateLogsEndpoint:
         assert "maxes_updated" in data
         assert "generated_new_week" in data
 
-    def test_update_logs_triggers_new_week_generation(self, client, seeded_db_with_logs):
+    def test_update_logs_triggers_new_week_generation(self, client, seeded_db_with_logs, auth_headers):
         # Update the only incomplete mandatory log to completed
         response = client.patch(
             "/update-logs",
             json=[
                 {
                     "id": 3,
-                    "user_id": 1,
                     "workout_day_exercise_id": 3,
                     "program_week": 1,
                     "weight": 340,
@@ -185,6 +262,7 @@ class TestUpdateLogsEndpoint:
                     "completed": True,
                 }
             ],
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -197,16 +275,16 @@ class TestUpdateLogsEndpoint:
         ).fetchone()[0]
         assert count == 4
 
-    def test_update_logs_empty_payload(self, client):
-        response = client.patch("/update-logs", json=[])
+    def test_update_logs_empty_payload(self, client, auth_headers):
+        response = client.patch("/update-logs", json=[], headers=auth_headers)
 
         assert response.status_code == 400
         assert "No exercise logs provided" in response.json()["detail"]
 
-    def test_update_logs_updates_one_rep_max(self, client, seeded_db_with_logs):
+    def test_update_logs_updates_one_rep_max(self, client, seeded_db_with_logs, auth_headers):
         # Get original max
         original_max = seeded_db_with_logs.connection.execute(
-            "SELECT one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 3"
+            "SELECT current_one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 3"
         ).fetchone()[0]
 
         # Complete with high RIR (should increase max)
@@ -215,7 +293,6 @@ class TestUpdateLogsEndpoint:
             json=[
                 {
                     "id": 3,
-                    "user_id": 1,
                     "workout_day_exercise_id": 3,
                     "program_week": 1,
                     "weight": 340,
@@ -225,25 +302,25 @@ class TestUpdateLogsEndpoint:
                     "completed": True,
                 }
             ],
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
 
         # Verify max was updated
         new_max = seeded_db_with_logs.connection.execute(
-            "SELECT one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 3"
+            "SELECT current_one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 3"
         ).fetchone()[0]
 
         assert new_max > original_max
         assert new_max == original_max * 1.05  # +5%
 
-    def test_update_multiple_logs(self, client, seeded_db_with_logs):
+    def test_update_multiple_logs(self, client, seeded_db_with_logs, auth_headers):
         response = client.patch(
             "/update-logs",
             json=[
                 {
                     "id": 1,
-                    "user_id": 1,
                     "workout_day_exercise_id": 1,
                     "program_week": 1,
                     "weight": 155,
@@ -254,7 +331,6 @@ class TestUpdateLogsEndpoint:
                 },
                 {
                     "id": 2,
-                    "user_id": 1,
                     "workout_day_exercise_id": 2,
                     "program_week": 1,
                     "weight": 245,
@@ -264,6 +340,7 @@ class TestUpdateLogsEndpoint:
                     "completed": True,
                 },
             ],
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -274,8 +351,8 @@ class TestUpdateLogsEndpoint:
 class TestGetPrograms:
     """Integration tests for GET /programs."""
 
-    def test_get_programs_success(self, client):
-        response = client.get("/programs", params={"user_id": 1})
+    def test_get_programs_success(self, client, auth_headers):
+        response = client.get("/programs", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -283,24 +360,17 @@ class TestGetPrograms:
         assert data[0]["id"] == 1
         assert data[0]["name"] == "Test Program"
 
-    def test_get_programs_filters_by_user(self, client):
-        response = client.get("/programs", params={"user_id": 999})
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data == []
-
-    def test_get_programs_missing_params(self, client):
+    def test_get_programs_missing_auth(self, client):
         response = client.get("/programs")
 
-        assert response.status_code == 422
+        assert response.status_code in (401, 403)
 
 
 class TestGetProgramDetail:
     """Integration tests for GET /programs/{program_id}."""
 
-    def test_get_program_detail_success(self, client):
-        response = client.get("/programs/1")
+    def test_get_program_detail_success(self, client, auth_headers):
+        response = client.get("/programs/1", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -308,8 +378,8 @@ class TestGetProgramDetail:
         assert data["name"] == "Test Program"
         assert len(data["days"]) == 2  # Day 1 and Day 2
 
-    def test_get_program_detail_day_grouping(self, client):
-        response = client.get("/programs/1")
+    def test_get_program_detail_day_grouping(self, client, auth_headers):
+        response = client.get("/programs/1", headers=auth_headers)
 
         data = response.json()
         days = data["days"]
@@ -330,8 +400,8 @@ class TestGetProgramDetail:
         assert "Deadlift" in exercise_names
         assert "Assisted Pull-up" in exercise_names
 
-    def test_get_program_detail_exercise_fields(self, client):
-        response = client.get("/programs/1")
+    def test_get_program_detail_exercise_fields(self, client, auth_headers):
+        response = client.get("/programs/1", headers=auth_headers)
 
         data = response.json()
         # Find the Bench Press exercise in Day 1
@@ -344,8 +414,8 @@ class TestGetProgramDetail:
         assert bench["optional"] is False
         assert bench["equipment_type"] == "BARBELL"
 
-    def test_get_program_detail_optional_exercise(self, client):
-        response = client.get("/programs/1")
+    def test_get_program_detail_optional_exercise(self, client, auth_headers):
+        response = client.get("/programs/1", headers=auth_headers)
 
         data = response.json()
         day2 = data["days"][1]
@@ -353,8 +423,8 @@ class TestGetProgramDetail:
 
         assert pullup["optional"] is True
 
-    def test_get_program_detail_not_found(self, client):
-        response = client.get("/programs/999")
+    def test_get_program_detail_not_found(self, client, auth_headers):
+        response = client.get("/programs/999", headers=auth_headers)
 
         assert response.status_code == 404
 
@@ -362,8 +432,8 @@ class TestGetProgramDetail:
 class TestGetExercises:
     """Integration tests for GET /exercises."""
 
-    def test_get_exercises_returns_all(self, client):
-        response = client.get("/exercises")
+    def test_get_exercises_returns_all(self, client, auth_headers):
+        response = client.get("/exercises", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -374,8 +444,8 @@ class TestGetExercises:
         assert "Deadlift" in names
         assert "Assisted Pull-up" in names
 
-    def test_get_exercises_fields(self, client):
-        response = client.get("/exercises")
+    def test_get_exercises_fields(self, client, auth_headers):
+        response = client.get("/exercises", headers=auth_headers)
 
         data = response.json()
         exercise = data[0]
@@ -384,8 +454,8 @@ class TestGetExercises:
         assert "equipment_type" in exercise
         assert "weight_increment" in exercise
 
-    def test_get_exercises_ordered_by_name(self, client):
-        response = client.get("/exercises")
+    def test_get_exercises_ordered_by_name(self, client, auth_headers):
+        response = client.get("/exercises", headers=auth_headers)
 
         data = response.json()
         names = [e["name"] for e in data]
@@ -395,7 +465,7 @@ class TestGetExercises:
 class TestCreateExercise:
     """Integration tests for POST /exercises."""
 
-    def test_create_exercise_success(self, client):
+    def test_create_exercise_success(self, client, admin_auth_headers):
         response = client.post(
             "/exercises",
             json={
@@ -403,6 +473,7 @@ class TestCreateExercise:
                 "equipment_type": "BARBELL",
                 "weight_increment": 5.0,
             },
+            headers=admin_auth_headers,
         )
 
         assert response.status_code == 201
@@ -412,7 +483,7 @@ class TestCreateExercise:
         assert data["weight_increment"] == 5.0
         assert "id" in data
 
-    def test_create_exercise_duplicate_name_returns_409(self, client):
+    def test_create_exercise_duplicate_name_returns_409(self, client, admin_auth_headers):
         response = client.post(
             "/exercises",
             json={
@@ -420,12 +491,13 @@ class TestCreateExercise:
                 "equipment_type": "BARBELL",
                 "weight_increment": 5.0,
             },
+            headers=admin_auth_headers,
         )
 
         assert response.status_code == 409
         assert "already exists" in response.json()["detail"]
 
-    def test_create_exercise_invalid_equipment_type(self, client):
+    def test_create_exercise_invalid_equipment_type(self, client, admin_auth_headers):
         response = client.post(
             "/exercises",
             json={
@@ -433,19 +505,32 @@ class TestCreateExercise:
                 "equipment_type": "INVALID",
                 "weight_increment": 5.0,
             },
+            headers=admin_auth_headers,
         )
 
         assert response.status_code == 422
+
+    def test_create_exercise_requires_admin(self, client, auth_headers):
+        response = client.post(
+            "/exercises",
+            json={
+                "name": "Overhead Press",
+                "equipment_type": "BARBELL",
+                "weight_increment": 5.0,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 403
 
 
 class TestCreateProgram:
     """Integration tests for POST /programs."""
 
-    def test_create_program_success(self, client):
+    def test_create_program_success(self, client, auth_headers):
         response = client.post(
             "/programs",
             json={
-                "user_id": 1,
                 "name": "New Program",
                 "exercises": [
                     {
@@ -472,6 +557,7 @@ class TestCreateProgram:
                     },
                 ],
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 201
@@ -479,11 +565,10 @@ class TestCreateProgram:
         assert data["name"] == "New Program"
         assert len(data["days"]) == 2
 
-    def test_create_program_response_matches_program_detail_structure(self, client):
+    def test_create_program_response_matches_program_detail_structure(self, client, auth_headers):
         response = client.post(
             "/programs",
             json={
-                "user_id": 1,
                 "name": "Structured Program",
                 "exercises": [
                     {
@@ -495,6 +580,7 @@ class TestCreateProgram:
                     },
                 ],
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 201
@@ -517,11 +603,10 @@ class TestCreateProgram:
         assert exercise["optional"] is False
         assert "equipment_type" in exercise
 
-    def test_create_program_with_optional_and_mandatory(self, client):
+    def test_create_program_with_optional_and_mandatory(self, client, auth_headers):
         response = client.post(
             "/programs",
             json={
-                "user_id": 1,
                 "name": "Mixed Program",
                 "exercises": [
                     {
@@ -542,6 +627,7 @@ class TestCreateProgram:
                     },
                 ],
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 201
@@ -557,13 +643,13 @@ class TestCreateProgram:
 class TestDeleteProgram:
     """Integration tests for DELETE /programs/{program_id}."""
 
-    def test_delete_program_success(self, client, seeded_db_with_logs):
-        response = client.delete("/programs/1", params={"user_id": 1})
+    def test_delete_program_success(self, client, seeded_db_with_logs, auth_headers):
+        response = client.delete("/programs/1", headers=auth_headers)
 
         assert response.status_code == 204
 
         # Program is gone
-        assert client.get("/programs/1").status_code == 404
+        assert client.get("/programs/1", headers=auth_headers).status_code == 404
 
         # Exercise logs for this program are gone
         count = seeded_db_with_logs.connection.execute(
@@ -577,13 +663,25 @@ class TestDeleteProgram:
         ).fetchone()[0]
         assert count == 0
 
-    def test_delete_program_not_found(self, client):
-        response = client.delete("/programs/999", params={"user_id": 1})
+    def test_delete_program_not_found(self, client, auth_headers):
+        response = client.delete("/programs/999", headers=auth_headers)
 
         assert response.status_code == 404
 
-    def test_delete_program_wrong_user(self, client):
-        response = client.delete("/programs/1", params={"user_id": 999})
+    def test_delete_program_wrong_user(self, client, auth_headers):
+        # Create a second user and their program
+        client.post(
+            "/register",
+            json={"username": "otheruser", "password": "otherpass"},
+        )
+        # Program 1 belongs to user_id=1, but let's test with a program that doesn't belong
+        # The seeded program belongs to user_id=1, so auth_headers (user_id=1) should work.
+        # We need a token for a different user to test wrong user.
+        from auth.auth import create_access_token
+        other_token = create_access_token(999, "otheruser", "user")
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+
+        response = client.delete("/programs/1", headers=other_headers)
 
         assert response.status_code == 403
         assert "do not own" in response.json()["detail"]
@@ -592,7 +690,7 @@ class TestDeleteProgram:
 class TestUpdateProgramExercises:
     """Integration tests for PATCH /programs/{program_id}/exercises."""
 
-    def test_update_program_exercises_success(self, client):
+    def test_update_program_exercises_success(self, client, auth_headers):
         response = client.patch(
             "/programs/1/exercises",
             json={
@@ -601,6 +699,7 @@ class TestUpdateProgramExercises:
                     {"id": 2, "target_sets": 4, "target_reps": 6, "intensity": 77.5},
                 ]
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -619,7 +718,7 @@ class TestUpdateProgramExercises:
         assert exercises_by_id[2]["target_reps"] == 6
         assert exercises_by_id[2]["intensity"] == 77.5
 
-    def test_update_program_exercises_does_not_affect_other_fields(self, client):
+    def test_update_program_exercises_does_not_affect_other_fields(self, client, auth_headers):
         response = client.patch(
             "/programs/1/exercises",
             json={
@@ -627,6 +726,7 @@ class TestUpdateProgramExercises:
                     {"id": 1, "target_sets": 5, "target_reps": 5, "intensity": 80.0},
                 ]
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -638,7 +738,7 @@ class TestUpdateProgramExercises:
         assert bench["optional"] is False
         assert bench["equipment_type"] == "BARBELL"
 
-    def test_update_program_exercises_not_found(self, client):
+    def test_update_program_exercises_not_found(self, client, auth_headers):
         response = client.patch(
             "/programs/999/exercises",
             json={
@@ -646,6 +746,7 @@ class TestUpdateProgramExercises:
                     {"id": 1, "target_sets": 5, "target_reps": 5, "intensity": 80.0},
                 ]
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 404
@@ -654,9 +755,10 @@ class TestUpdateProgramExercises:
 class TestCreateRecommendedProgram:
     """Integration tests for POST /programs/recommended."""
 
-    def test_create_recommended_program_success(self, full_exercise_client):
+    def test_create_recommended_program_success(self, full_exercise_client, auth_headers):
         response = full_exercise_client.post(
-            "/programs/recommended", params={"user_id": 1}
+            "/programs/recommended",
+            headers=auth_headers,
         )
 
         assert response.status_code == 201
@@ -664,18 +766,20 @@ class TestCreateRecommendedProgram:
         assert data["name"] == "Stronger by Science Linear Progression - 5 Day Variant"
         assert len(data["days"]) == 5
 
-    def test_create_recommended_program_exercise_count(self, full_exercise_client):
+    def test_create_recommended_program_exercise_count(self, full_exercise_client, auth_headers):
         response = full_exercise_client.post(
-            "/programs/recommended", params={"user_id": 1}
+            "/programs/recommended",
+            headers=auth_headers,
         )
 
         data = response.json()
         total_exercises = sum(len(d["exercises"]) for d in data["days"])
         assert total_exercises == 28
 
-    def test_create_recommended_program_day_structure(self, full_exercise_client):
+    def test_create_recommended_program_day_structure(self, full_exercise_client, auth_headers):
         response = full_exercise_client.post(
-            "/programs/recommended", params={"user_id": 1}
+            "/programs/recommended",
+            headers=auth_headers,
         )
 
         data = response.json()
@@ -692,10 +796,11 @@ class TestCreateRecommendedProgram:
         # Day 5: 3 mandatory + 3 optional = 6
         assert len(days[5]["exercises"]) == 6
 
-    def test_create_recommended_program_missing_exercises(self, client):
+    def test_create_recommended_program_missing_exercises(self, client, auth_headers):
         # client fixture only has 4 exercises, not all 28
         response = client.post(
-            "/programs/recommended", params={"user_id": 1}
+            "/programs/recommended",
+            headers=auth_headers,
         )
 
         assert response.status_code == 400
@@ -705,10 +810,11 @@ class TestCreateRecommendedProgram:
 class TestUserWeight:
     """Integration tests for user weight endpoints."""
 
-    def test_create_user_weight(self, client):
+    def test_create_user_weight(self, client, auth_headers):
         response = client.post(
             "/user-weight",
-            json={"user_id": 1, "weight": 185.5, "date": "2024-02-01"},
+            json={"weight": 185.5, "date": "2024-02-01"},
+            headers=auth_headers,
         )
 
         assert response.status_code == 201
@@ -717,18 +823,20 @@ class TestUserWeight:
         assert data["date"] == "2024-02-01"
         assert "id" in data
 
-    def test_get_user_weight_history(self, client):
+    def test_get_user_weight_history(self, client, auth_headers):
         # Create two entries with different dates
         client.post(
             "/user-weight",
-            json={"user_id": 1, "weight": 182.0, "date": "2024-03-01"},
+            json={"weight": 182.0, "date": "2024-03-01"},
+            headers=auth_headers,
         )
         client.post(
             "/user-weight",
-            json={"user_id": 1, "weight": 184.0, "date": "2024-04-01"},
+            json={"weight": 184.0, "date": "2024-04-01"},
+            headers=auth_headers,
         )
 
-        response = client.get("/user-weight", params={"user_id": 1})
+        response = client.get("/user-weight", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -738,25 +846,31 @@ class TestUserWeight:
         dates = [entry["date"] for entry in data]
         assert dates == sorted(dates, reverse=True)
 
-    def test_get_user_weight_history_empty(self, client):
-        response = client.get("/user-weight", params={"user_id": 999})
+    def test_get_user_weight_history_empty(self, client, auth_headers):
+        # Use a token for a user with no weight entries
+        from auth.auth import create_access_token
+        token = create_access_token(999, "noone", "user")
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = client.get("/user-weight", headers=headers)
 
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_delete_user_weight(self, client):
+    def test_delete_user_weight(self, client, auth_headers):
         # Create an entry to delete
         create_response = client.post(
             "/user-weight",
-            json={"user_id": 1, "weight": 190.0, "date": "2024-05-01"},
+            json={"weight": 190.0, "date": "2024-05-01"},
+            headers=auth_headers,
         )
         weight_id = create_response.json()["id"]
 
-        response = client.delete(f"/user-weight/{weight_id}")
+        response = client.delete(f"/user-weight/{weight_id}", headers=auth_headers)
 
         assert response.status_code == 204
 
-    def test_delete_user_weight_not_found(self, client):
-        response = client.delete("/user-weight/99999")
+    def test_delete_user_weight_not_found(self, client, auth_headers):
+        response = client.delete("/user-weight/99999", headers=auth_headers)
 
         assert response.status_code == 404

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class ExerciseLog(BaseModel):
     id: int
-    user_id: int
+    user_id: int | None = None
     workout_day_exercise_id: int
     program_week: int
     weight: float

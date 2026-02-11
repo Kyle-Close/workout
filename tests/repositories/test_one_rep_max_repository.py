@@ -11,7 +11,7 @@ class TestOneRepMaxRepository:
         assert len(maxes) == 4
         bench_max = next((m for m in maxes if m.name == "Bench Press"), None)
         assert bench_max is not None
-        assert bench_max.one_rep_max == 200.0
+        assert bench_max.current_one_rep_max == 200.0
         assert bench_max.weight_increment == 5.0
 
     def test_get_user_one_rep_maxes_with_exercise_data_no_user(self, seeded_db):
@@ -26,7 +26,7 @@ class TestOneRepMaxRepository:
         seeded_db.connection.commit()
 
         result = seeded_db.connection.execute(
-            "SELECT one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 1"
+            "SELECT current_one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 1"
         ).fetchone()
 
         assert result[0] == 210.0
@@ -37,7 +37,7 @@ class TestOneRepMaxRepository:
         seeded_db.connection.commit()
 
         result = seeded_db.connection.execute(
-            "SELECT one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 2"
+            "SELECT current_one_rep_max FROM user_one_rep_maxes WHERE user_id = 1 AND exercise_id = 2"
         ).fetchone()
 
         assert result[0] == 300.0  # Squat unchanged

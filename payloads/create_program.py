@@ -11,6 +11,5 @@ class CreateProgramExercise(BaseModel):
 
 
 class CreateProgramPayload(BaseModel):
-    user_id: int
     name: str
     exercises: list[CreateProgramExercise]

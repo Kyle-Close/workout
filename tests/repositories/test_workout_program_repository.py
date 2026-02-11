@@ -43,7 +43,7 @@ class TestWorkoutProgramRepository:
     def test_get_program_workout_days_exercise_data_empty_program(self, seeded_db):
         # Create empty program
         seeded_db.connection.execute(
-            "INSERT INTO workout_programs (id, name) VALUES (2, 'Empty Program')"
+            "INSERT INTO workout_programs (id, user_id, name) VALUES (2, 1, 'Empty Program')"
         )
         seeded_db.connection.commit()
 
@@ -60,7 +60,7 @@ class TestWorkoutProgramRepository:
 
     def test_get_number_of_days_in_program_week_empty(self, seeded_db):
         seeded_db.connection.execute(
-            "INSERT INTO workout_programs (id, name) VALUES (2, 'Empty Program')"
+            "INSERT INTO workout_programs (id, user_id, name) VALUES (2, 1, 'Empty Program')"
         )
         seeded_db.connection.commit()
 
