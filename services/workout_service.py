@@ -4,6 +4,7 @@ from typing import final
 from fastapi import HTTPException
 from db.db import DB
 from helpers.Round import round_to_nearest
+from repositories.exercise_repository import ExerciseRepository
 from repositories.exercise_log_repository import ExerciseLogRepository
 from repositories.one_rep_max_repository import OneRepMaxRepository
 from repositories.user_repository import UserRepository
@@ -46,6 +47,35 @@ class WorkoutService:
         if owner != user_id:
             raise HTTPException(status_code=403, detail="You do not own this program")
         self.workout_program_repository.delete_program(program_id)
+
+    def create_recommended_program(self, user_id: int) -> ProgramDetail:
+        template = _SBS_TEMPLATE
+        exercise_names = list({e["exercise_name"] for e in template})
+        exercise_repo = ExerciseRepository(self.db)
+        id_map = exercise_repo.get_id_map_by_name(exercise_names)
+
+        missing = [n for n in exercise_names if n not in id_map]
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing exercises in database: {', '.join(sorted(missing))}",
+            )
+
+        exercises = [
+            {
+                "exercise_id": id_map[e["exercise_name"]],
+                "workout_day": e["workout_day"],
+                "target_sets": e["target_sets"],
+                "target_reps": e["target_reps"],
+                "intensity": e["intensity"],
+                "optional": e["optional"],
+            }
+            for e in template
+        ]
+
+        return self.create_program(
+            user_id, "Stronger by Science Linear Progression - 5 Day Variant", exercises
+        )
 
     def create_program(self, user_id: int, name: str, exercises: list[dict]) -> ProgramDetail:
         program_id = self.workout_program_repository.create_program(user_id, name)
@@ -154,3 +184,51 @@ class WorkoutService:
             maxes_updated=one_rep_max_updates,
             generated_new_week=should_populate_new_week,
         )
+
+
+def _exercise(name: str, day: int, sets: int, reps: int, intensity: float, optional: bool = False) -> dict:
+    return {
+        "exercise_name": name,
+        "workout_day": day,
+        "target_sets": sets,
+        "target_reps": reps,
+        "intensity": intensity,
+        "optional": optional,
+    }
+
+
+_SBS_TEMPLATE = [
+    # Day 1
+    _exercise("Squat", 1, 3, 3, 87.5),
+    _exercise("Incline Bench Press", 1, 3, 8, 75),
+    _exercise("T-Bar Rows", 1, 3, 8, 75),
+    _exercise("Bulgarian Split Squat", 1, 3, 8, 75, optional=True),
+    _exercise("Seated Machine Row", 1, 3, 10, 75, optional=True),
+    _exercise("Hanging Leg Raises", 1, 3, 12, 100, optional=True),
+    # Day 2
+    _exercise("Bench Press", 2, 3, 3, 87.5),
+    _exercise("Squat (2)", 2, 3, 5, 82.5),
+    _exercise("Seated Leg Curl", 2, 3, 12, 75, optional=True),
+    _exercise("Reverse Pec Deck", 2, 3, 15, 70, optional=True),
+    _exercise("Cable Tricep Pushdown", 2, 3, 12, 72.5, optional=True),
+    # Day 3
+    _exercise("Deadlift", 3, 3, 3, 87.5),
+    _exercise("DB Bench Press", 3, 3, 5, 82.5),
+    _exercise("Assisted Pull-Ups", 3, 3, 8, 75),
+    _exercise("Seated Cable Row", 3, 3, 10, 75, optional=True),
+    _exercise("Face Pulls", 3, 3, 15, 70, optional=True),
+    _exercise("Hammer Curls", 3, 3, 12, 70, optional=True),
+    # Day 4
+    _exercise("Overhead Press", 4, 3, 3, 87.5),
+    _exercise("Leg Press", 4, 3, 8, 75),
+    _exercise("Lateral Raises", 4, 3, 15, 70, optional=True),
+    _exercise("Calf Raises", 4, 4, 12, 75, optional=True),
+    _exercise("Plank", 4, 3, 60, 100, optional=True),
+    # Day 5
+    _exercise("Close Grip Bench Press", 5, 3, 8, 75),
+    _exercise("Romanian Deadlift", 5, 3, 8, 75),
+    _exercise("Lat Pull-Downs", 5, 3, 8, 75),
+    _exercise("Hip Thrusts", 5, 3, 10, 75, optional=True),
+    _exercise("Neutral-Grip Pulldown", 5, 3, 10, 75, optional=True),
+    _exercise("DB Curls", 5, 3, 12, 70, optional=True),
+]

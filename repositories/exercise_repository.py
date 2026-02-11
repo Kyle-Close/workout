@@ -17,6 +17,12 @@ class ExerciseRepository:
         row = self.db.connection.execute(statement, (name,)).fetchone()
         return dict(row) if row else None
 
+    def get_id_map_by_name(self, names: list[str]) -> dict[str, int]:
+        placeholders = ",".join("?" for _ in names)
+        statement = f"SELECT id, name FROM exercises WHERE name IN ({placeholders})"
+        rows = self.db.connection.execute(statement, names).fetchall()
+        return {row["name"]: row["id"] for row in rows}
+
     def create_exercise(self, name: str, equipment_type: str, weight_increment: float) -> int:
         statement = "INSERT INTO exercises (name, equipment_type, weight_increment) VALUES (?, ?, ?)"
         cursor = self.db.connection.execute(statement, (name, equipment_type, weight_increment))

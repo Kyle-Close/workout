@@ -587,3 +587,54 @@ class TestDeleteProgram:
 
         assert response.status_code == 403
         assert "do not own" in response.json()["detail"]
+
+
+class TestCreateRecommendedProgram:
+    """Integration tests for POST /programs/recommended."""
+
+    def test_create_recommended_program_success(self, full_exercise_client):
+        response = full_exercise_client.post(
+            "/programs/recommended", params={"user_id": 1}
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "Stronger by Science Linear Progression - 5 Day Variant"
+        assert len(data["days"]) == 5
+
+    def test_create_recommended_program_exercise_count(self, full_exercise_client):
+        response = full_exercise_client.post(
+            "/programs/recommended", params={"user_id": 1}
+        )
+
+        data = response.json()
+        total_exercises = sum(len(d["exercises"]) for d in data["days"])
+        assert total_exercises == 28
+
+    def test_create_recommended_program_day_structure(self, full_exercise_client):
+        response = full_exercise_client.post(
+            "/programs/recommended", params={"user_id": 1}
+        )
+
+        data = response.json()
+        days = {d["day"]: d for d in data["days"]}
+
+        # Day 1: 3 mandatory + 3 optional = 6
+        assert len(days[1]["exercises"]) == 6
+        # Day 2: 2 mandatory + 3 optional = 5
+        assert len(days[2]["exercises"]) == 5
+        # Day 3: 3 mandatory + 3 optional = 6
+        assert len(days[3]["exercises"]) == 6
+        # Day 4: 2 mandatory + 3 optional = 5
+        assert len(days[4]["exercises"]) == 5
+        # Day 5: 3 mandatory + 3 optional = 6
+        assert len(days[5]["exercises"]) == 6
+
+    def test_create_recommended_program_missing_exercises(self, client):
+        # client fixture only has 4 exercises, not all 28
+        response = client.post(
+            "/programs/recommended", params={"user_id": 1}
+        )
+
+        assert response.status_code == 400
+        assert "Missing exercises" in response.json()["detail"]

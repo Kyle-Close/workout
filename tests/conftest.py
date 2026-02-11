@@ -216,6 +216,69 @@ def multi_week_client(seeded_db_with_multi_week_logs: TestDB) -> Generator[TestC
 
 
 @pytest.fixture
+def full_exercise_db(test_db: TestDB) -> TestDB:
+    """Database with all exercises matching the production seed, plus a user."""
+    conn = test_db.connection
+
+    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Test User')")
+
+    conn.executemany(
+        "INSERT INTO exercises (id, name, equipment_type, weight_increment) VALUES (?, ?, ?, ?)",
+        [
+            (1, "Bench Press", "BARBELL", 5.0),
+            (2, "Squat", "BARBELL", 5.0),
+            (3, "Deadlift", "BARBELL", 5.0),
+            (4, "Overhead Press", "BARBELL", 5.0),
+            (5, "Romanian Deadlift", "BARBELL", 5.0),
+            (6, "Close Grip Bench Press", "BARBELL", 5.0),
+            (7, "DB Bench Press", "DUMBBELL", 5.0),
+            (8, "Incline Bench Press", "DUMBBELL", 5.0),
+            (9, "Leg Press", "MACHINE", 5.0),
+            (10, "T-Bar Rows", "MACHINE", 2.5),
+            (11, "Lat Pull-Downs", "MACHINE", 10.0),
+            (12, "Assisted Pull-Ups", "MACHINE", 10.0),
+            (13, "Bulgarian Split Squat", "DUMBBELL", 5.0),
+            (14, "Seated Machine Row", "MACHINE", 10.0),
+            (15, "Hanging Leg Raises", "BODY WEIGHT", 5.0),
+            (16, "Seated Leg Curl", "MACHINE", 10.0),
+            (17, "Reverse Pec Deck", "MACHINE", 10.0),
+            (18, "Cable Tricep Pushdown", "MACHINE", 5.0),
+            (19, "Seated Cable Row", "MACHINE", 10.0),
+            (20, "Face Pulls", "MACHINE", 5.0),
+            (21, "Hammer Curls", "DUMBBELL", 5.0),
+            (22, "Lateral Raises", "DUMBBELL", 5.0),
+            (23, "Calf Raises", "MACHINE", 2.5),
+            (24, "Plank", "BODY WEIGHT", 5.0),
+            (25, "Hip Thrusts", "MACHINE", 2.5),
+            (26, "Neutral-Grip Pulldown", "MACHINE", 2.5),
+            (27, "DB Curls", "DUMBBELL", 5.0),
+            (28, "Squat (2)", "BARBELL", 5.0),
+        ],
+    )
+
+    conn.commit()
+    return test_db
+
+
+@pytest.fixture
+def full_exercise_client(full_exercise_db: TestDB) -> Generator[TestClient, None, None]:
+    """FastAPI test client with all exercises seeded."""
+
+    def override_get_db() -> Generator[TestDB, None, None]:
+        try:
+            yield full_exercise_db
+            full_exercise_db.connection.commit()
+        except sqlite3.Error:
+            full_exercise_db.connection.rollback()
+            raise
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def client(seeded_db_with_logs: TestDB) -> Generator[TestClient, None, None]:
     """FastAPI test client with database dependency override."""
 

@@ -149,6 +149,11 @@ def get_program_detail(program_id: int, db: DB = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Program not found")
     return result
 
+@app.post("/programs/recommended", status_code=201)
+def create_recommended_program(user_id: int, db: DB = Depends(get_db)):
+    workout_service = WorkoutService(db)
+    return workout_service.create_recommended_program(user_id)
+
 @app.post("/programs", status_code=201)
 def create_program(payload: CreateProgramPayload, db: DB = Depends(get_db)):
     workout_service = WorkoutService(db)
