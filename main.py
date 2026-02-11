@@ -9,14 +9,17 @@ from db.db import DB, DatabaseConnectionError
 from helpers.plate_calculator import PlateCalculator
 from payloads.create_exercise import CreateExercisePayload
 from payloads.create_program import CreateProgramPayload
+from payloads.create_user_weight import CreateUserWeightPayload
 from payloads.generate_logs_week import GenerateLogsWeekPayload
 from payloads.update_program import UpdateProgramPayload
 from payloads.update_program_exercises import UpdateProgramExercisesPayload
 from repositories.exercise_repository import ExerciseRepository
+from repositories.user_repository import UserRepository
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
 from services.workout_service import WorkoutService
 from views.exercise_log import ExerciseLog
+from views.user_weight import UserWeight
 
 app = FastAPI()
 app.add_middleware(
@@ -181,3 +184,24 @@ def update_program_exercises(program_id: int, payload: UpdateProgramExercisesPay
     if result is None:
         raise HTTPException(status_code=404, detail="Program not found")
     return result
+
+
+@app.post("/user-weight", status_code=201, response_model=UserWeight)
+def create_user_weight(payload: CreateUserWeightPayload, db: DB = Depends(get_db)):
+    user_repo = UserRepository(db)
+    weight_id = user_repo.create_user_weight(payload.user_id, payload.weight, payload.date)
+    return UserWeight(id=weight_id, weight=payload.weight, date=payload.date)
+
+
+@app.get("/user-weight", response_model=list[UserWeight])
+def get_user_weight_history(user_id: int, db: DB = Depends(get_db)):
+    user_repo = UserRepository(db)
+    return user_repo.get_user_weight_history(user_id)
+
+
+@app.delete("/user-weight/{weight_id}", status_code=204)
+def delete_user_weight(weight_id: int, db: DB = Depends(get_db)):
+    user_repo = UserRepository(db)
+    deleted = user_repo.delete_user_weight(weight_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Weight entry not found")

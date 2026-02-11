@@ -700,3 +700,63 @@ class TestCreateRecommendedProgram:
 
         assert response.status_code == 400
         assert "Missing exercises" in response.json()["detail"]
+
+
+class TestUserWeight:
+    """Integration tests for user weight endpoints."""
+
+    def test_create_user_weight(self, client):
+        response = client.post(
+            "/user-weight",
+            json={"user_id": 1, "weight": 185.5, "date": "2024-02-01"},
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["weight"] == 185.5
+        assert data["date"] == "2024-02-01"
+        assert "id" in data
+
+    def test_get_user_weight_history(self, client):
+        # Create two entries with different dates
+        client.post(
+            "/user-weight",
+            json={"user_id": 1, "weight": 182.0, "date": "2024-03-01"},
+        )
+        client.post(
+            "/user-weight",
+            json={"user_id": 1, "weight": 184.0, "date": "2024-04-01"},
+        )
+
+        response = client.get("/user-weight", params={"user_id": 1})
+
+        assert response.status_code == 200
+        data = response.json()
+        # Should include seeded entry (2024-01-01) plus the two new ones
+        assert len(data) >= 3
+        # Should be ordered by date descending
+        dates = [entry["date"] for entry in data]
+        assert dates == sorted(dates, reverse=True)
+
+    def test_get_user_weight_history_empty(self, client):
+        response = client.get("/user-weight", params={"user_id": 999})
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_delete_user_weight(self, client):
+        # Create an entry to delete
+        create_response = client.post(
+            "/user-weight",
+            json={"user_id": 1, "weight": 190.0, "date": "2024-05-01"},
+        )
+        weight_id = create_response.json()["id"]
+
+        response = client.delete(f"/user-weight/{weight_id}")
+
+        assert response.status_code == 204
+
+    def test_delete_user_weight_not_found(self, client):
+        response = client.delete("/user-weight/99999")
+
+        assert response.status_code == 404
