@@ -2,8 +2,6 @@
 
 A RESTful API for tracking strength training programs, exercise logs, and progressive overload. Built with FastAPI and SQLite.
 
-![Application Screenshot](docs/images/placeholder.png)
-
 ## Overview
 
 Workout Tracker helps lifters follow structured training programs by automatically calculating working weights from one rep max percentages, tracking completed sets across weekly training cycles, and adjusting maxes over time based on performance. The API includes a built-in Stronger by Science (SBS) Linear Progression template and supports fully custom program creation.
