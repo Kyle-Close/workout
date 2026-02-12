@@ -1,6 +1,91 @@
 import pytest
 
 
+class TestDemoLogin:
+    """Integration tests for POST /demo-login."""
+
+    def test_demo_login_returns_token(self, full_exercise_client):
+        response = full_exercise_client.post("/demo-login")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_demo_login_creates_seeded_data(self, full_exercise_client):
+        response = full_exercise_client.post("/demo-login")
+        token = response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Should have the recommended program
+        programs = full_exercise_client.get("/programs", headers=headers).json()
+        assert len(programs) == 1
+        assert "Stronger by Science" in programs[0]["name"]
+
+        # Should have weight history
+        weights = full_exercise_client.get("/user-weight", headers=headers).json()
+        assert len(weights) == 8
+
+        # Should have 1RM data
+        maxes = full_exercise_client.get("/one-rep-maxes", headers=headers).json()
+        assert len(maxes) > 0
+
+    def test_demo_login_has_exercise_logs(self, full_exercise_client):
+        response = full_exercise_client.post("/demo-login")
+        token = response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        programs = full_exercise_client.get("/programs", headers=headers).json()
+        program_id = programs[0]["id"]
+
+        # Check how many exercises the program actually has
+        detail = full_exercise_client.get(f"/programs/{program_id}", headers=headers).json()
+        total_exercises = sum(len(d["exercises"]) for d in detail["days"])
+
+        # Should be on week 5 (weeks 1-4 completed, week 5 in progress)
+        week = full_exercise_client.get(
+            "/active-week",
+            params={"workout_program_id": program_id},
+            headers=headers,
+        ).json()
+        assert week == 5
+
+        # Current week data should have one entry per program exercise
+        week_data = full_exercise_client.get(
+            "/get-current-week-data",
+            params={"workout_program_id": program_id},
+            headers=headers,
+        ).json()
+        assert len(week_data["weekData"]) == total_exercises
+
+    def test_demo_login_resets_on_subsequent_call(self, full_exercise_client):
+        # First login
+        full_exercise_client.post("/demo-login")
+
+        # Second login should reset cleanly
+        response = full_exercise_client.post("/demo-login")
+        assert response.status_code == 200
+        token = response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Should still have exactly 1 program (not 2)
+        programs = full_exercise_client.get("/programs", headers=headers).json()
+        assert len(programs) == 1
+
+    def test_demo_login_is_fully_interactive(self, full_exercise_client):
+        response = full_exercise_client.post("/demo-login")
+        token = response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Demo user can create a weight entry
+        weight_resp = full_exercise_client.post(
+            "/user-weight",
+            json={"weight": 185.0, "date": "2025-06-01"},
+            headers=headers,
+        )
+        assert weight_resp.status_code == 201
+
+
 class TestAuth:
     """Integration tests for auth endpoints."""
 
@@ -763,7 +848,7 @@ class TestCreateRecommendedProgram:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["name"] == "Stronger by Science Linear Progression - 5 Day Variant"
+        assert data["name"] == "Stronger by Science Linear Progression"
         assert len(data["days"]) == 5
 
     def test_create_recommended_program_exercise_count(self, full_exercise_client, auth_headers):

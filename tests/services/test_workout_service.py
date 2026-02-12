@@ -84,16 +84,22 @@ class TestWorkoutService:
         assert log["weight"] == 145
 
     def test_populate_exercise_logs_week_missing_exercise_data(self, seeded_db):
-        # Remove one rep max for an exercise
+        # Remove one rep max for an exercise — service should skip it with a warning
         seeded_db.connection.execute(
             "DELETE FROM user_one_rep_maxes WHERE exercise_id = 1"
         )
         seeded_db.connection.commit()
 
         service = WorkoutService(seeded_db)
+        service.populate_exercise_logs_week(user_id=1, program_id=1)
 
-        with pytest.raises(ValueError, match="Could not find exercise data"):
-            service.populate_exercise_logs_week(user_id=1, program_id=1)
+        # Verify logs were created for the remaining exercises but not the deleted one
+        rows = seeded_db.connection.execute(
+            "SELECT workout_day_exercise_id FROM exercise_log WHERE user_id = 1 AND program_week = 1"
+        ).fetchall()
+        wde_ids = [r[0] for r in rows]
+        # workout_day_exercise_id=1 maps to exercise_id=1, which should be skipped
+        assert 1 not in wde_ids
 
     def test_populate_exercise_logs_week_missing_user_weight(self, seeded_db):
         # Remove user weight - needed for assisted exercises

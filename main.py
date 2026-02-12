@@ -27,6 +27,7 @@ from payloads.update_program_exercises import UpdateProgramExercisesPayload
 from repositories.exercise_repository import ExerciseRepository
 from repositories.one_rep_max_repository import OneRepMaxRepository
 from repositories.user_repository import UserRepository
+from services.demo_service import DemoService
 from services.exercise_log_service import ExerciseLogService
 from services.one_rep_max_service import OneRepMaxService
 from services.workout_service import WorkoutService
@@ -71,6 +72,14 @@ def register(payload: RegisterPayload, db: DB = Depends(get_db)):
     password_hash = hash_password(payload.password)
     user_id = user_repo.create_user(payload.username, password_hash)
     token = create_access_token(user_id, payload.username, "user")
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@app.post("/demo-login")
+def demo_login(db: DB = Depends(get_db)):
+    demo_service = DemoService(db)
+    user_id, username = demo_service.reset_and_seed()
+    token = create_access_token(user_id, username, "demo")
     return {"access_token": token, "token_type": "bearer"}
 
 

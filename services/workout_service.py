@@ -203,22 +203,37 @@ def _exercise(name: str, day: int, sets: int, reps: int, intensity: float, optio
 
 
 _SBS_TEMPLATE = [
-    # Day 1
+    # Day 1 — Squat focus
     _exercise("Squat", 1, 3, 3, 87.5),
     _exercise("Incline Bench Press", 1, 3, 8, 75),
     _exercise("T-Bar Rows", 1, 3, 8, 75),
-    # Day 2
+    _exercise("Bulgarian Split Squat", 1, 3, 10, 65, optional=True),
+    _exercise("Face Pulls", 1, 3, 15, 60, optional=True),
+    _exercise("Hanging Leg Raises", 1, 3, 12, 0, optional=True),
+    # Day 2 — Bench focus
     _exercise("Bench Press", 2, 3, 3, 87.5),
-    _exercise("Squat (2)", 2, 3, 5, 82.5),
-    # Day 3
+    _exercise("Front Squat", 2, 3, 5, 82.5),
+    _exercise("Seated Machine Row", 2, 3, 10, 70, optional=True),
+    _exercise("Lateral Raises", 2, 3, 15, 60, optional=True),
+    _exercise("Hammer Curls", 2, 3, 12, 65, optional=True),
+    # Day 3 — Deadlift focus
     _exercise("Deadlift", 3, 3, 3, 87.5),
     _exercise("DB Bench Press", 3, 3, 5, 82.5),
     _exercise("Assisted Pull-Ups", 3, 3, 8, 75),
-    # Day 4
+    _exercise("Seated Leg Curl", 3, 3, 10, 70, optional=True),
+    _exercise("Cable Tricep Pushdown", 3, 3, 12, 65, optional=True),
+    _exercise("Calf Raises", 3, 3, 15, 65, optional=True),
+    # Day 4 — OHP focus
     _exercise("Overhead Press", 4, 3, 3, 87.5),
     _exercise("Leg Press", 4, 3, 8, 75),
-    # Day 5
+    _exercise("Neutral-Grip Pulldown", 4, 3, 10, 70, optional=True),
+    _exercise("Reverse Pec Deck", 4, 3, 12, 65, optional=True),
+    _exercise("DB Curls", 4, 3, 12, 65, optional=True),
+    # Day 5 — Volume day
     _exercise("Close Grip Bench Press", 5, 3, 8, 75),
     _exercise("Romanian Deadlift", 5, 3, 8, 75),
     _exercise("Lat Pull-Downs", 5, 3, 8, 75),
+    _exercise("Hip Thrusts", 5, 3, 10, 70, optional=True),
+    _exercise("Seated Cable Row", 5, 3, 10, 70, optional=True),
+    _exercise("Plank", 5, 3, 10, 0, optional=True),
 ]

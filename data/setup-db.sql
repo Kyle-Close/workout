@@ -96,7 +96,7 @@ INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Plank', 
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Hip Thrusts', 'MACHINE', 2.5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Neutral-Grip Pulldown', 'MACHINE', 2.5);
 INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('DB Curls', 'DUMBBELL', 5);
-INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Squat (2)', 'BARBELL', 5);
+INSERT INTO exercises (name, equipment_type, weight_increment) VALUES ('Front Squat', 'BARBELL', 5);
 
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 1, 155, 155); -- Bench Press
 INSERT INTO user_one_rep_maxes (user_id, exercise_id, original_one_rep_max, current_one_rep_max) VALUES (1, 2, 170, 170); -- Squat

@@ -263,7 +263,7 @@ def full_exercise_db(test_db: TestDB) -> TestDB:
             (25, "Hip Thrusts", "MACHINE", 2.5),
             (26, "Neutral-Grip Pulldown", "MACHINE", 2.5),
             (27, "DB Curls", "DUMBBELL", 5.0),
-            (28, "Squat (2)", "BARBELL", 5.0),
+            (28, "Front Squat", "BARBELL", 5.0),
         ],
     )
 
