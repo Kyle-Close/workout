@@ -613,6 +613,9 @@ class TestCreateProgram:
     """Integration tests for POST /programs."""
 
     def test_create_program_success(self, client, auth_headers):
+        # Delete seeded program so we can create a new one
+        client.delete("/programs/1", headers=auth_headers)
+
         response = client.post(
             "/programs",
             json={
@@ -650,7 +653,30 @@ class TestCreateProgram:
         assert data["name"] == "New Program"
         assert len(data["days"]) == 2
 
+    def test_create_program_rejected_when_one_exists(self, client, auth_headers):
+        response = client.post(
+            "/programs",
+            json={
+                "name": "Second Program",
+                "exercises": [
+                    {
+                        "exercise_id": 1,
+                        "workout_day": 1,
+                        "target_sets": 3,
+                        "target_reps": 5,
+                        "intensity": 82.5,
+                    },
+                ],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 409
+        assert "already have a program" in response.json()["detail"]
+
     def test_create_program_response_matches_program_detail_structure(self, client, auth_headers):
+        client.delete("/programs/1", headers=auth_headers)
+
         response = client.post(
             "/programs",
             json={
@@ -689,6 +715,8 @@ class TestCreateProgram:
         assert "equipment_type" in exercise
 
     def test_create_program_with_optional_and_mandatory(self, client, auth_headers):
+        client.delete("/programs/1", headers=auth_headers)
+
         response = client.post(
             "/programs",
             json={

@@ -76,6 +76,10 @@ class WorkoutService:
         return self.create_program(user_id, "Stronger by Science Linear Progression", exercises)
 
     def create_program(self, user_id: int, name: str, exercises: list[dict]) -> ProgramDetail:
+        existing = self.workout_program_repository.get_user_programs(user_id)
+        if existing:
+            raise HTTPException(status_code=409, detail="You already have a program. Delete it before creating a new one.")
+
         program_id = self.workout_program_repository.create_program(user_id, name)
         self.workout_program_repository.create_workout_day_exercises(program_id, exercises)
         return self.get_program_detail(program_id)
